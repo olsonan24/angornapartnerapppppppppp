@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="Angora Partner dashboard prototype for reports, inventory, orders, FBA, and team messages.">
+  <title>Angora Partner</title>
+  <link rel="icon" href="https://framerusercontent.com/images/MoDB9mcqMpblipeUEo9qaCLZzeY.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+<div class="login-shell" id="login-shell">
+  <div class="login-layout">
+    <section class="login-story">
+      <div class="login-brand-row">
+        <div>
+          <img class="login-logo" src="https://framerusercontent.com/images/Q2JXvbS4BJTwpsp3ShAk0XdKak.png?width=240&height=58" alt="Angora">
+          <div class="login-brand-name">Angora Partner</div>
+          <div class="login-brand-sub">Premium visibility for brand partners</div>
+        </div>
+      </div>
+
+      <div class="login-hero">
+        <div class="login-badge">Partner Portal Demo</div>
+        <h1 class="login-title">Open a calm, premium workspace for reports, inventory, and weekly decisions.</h1>
+        <p class="login-copy">
+          This first pass uses a local demo session instead of real email auth, so you can step into the product
+          experience now and wire secure sign-in later.
+        </p>
+      </div>
+
+      <div class="login-feature-list">
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          Weekly reports with margin visibility and AI-ready takeaways
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          Inventory, FBA, and purchase order tracking in one flow
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          Faster partner communication without chasing updates by email
+        </div>
+      </div>
+
+      <div class="login-preview-card">
+        <div class="login-preview-top">
+          <div>
+            <div class="login-preview-label">This Week</div>
+            <div class="login-preview-title">Cal &amp; Rye Snapshot</div>
+          </div>
+          <span class="pill pg">Live Demo</span>
+        </div>
+        <div class="login-preview-grid">
+          <div class="login-preview-stat">
+            <div class="login-preview-value">$8,120</div>
+            <div class="login-preview-meta">Profit</div>
+          </div>
+          <div class="login-preview-stat">
+            <div class="login-preview-value">847</div>
+            <div class="login-preview-meta">FBA Units</div>
+          </div>
+          <div class="login-preview-stat">
+            <div class="login-preview-value">3</div>
+            <div class="login-preview-meta">Open POs</div>
+          </div>
+        </div>
+        <div class="login-preview-note">
+          Built to feel like a client-ready partner workspace, even while the authentication layer is still in demo mode.
+        </div>
+      </div>
+    </section>
+
+    <section class="login-panel">
+      <div class="login-card">
+        <div class="login-card-top">
+          <div class="login-card-eyebrow">Demo Access</div>
+          <h2 class="login-card-title">Enter the workspace</h2>
+          <p class="login-card-copy">
+            Email and password can come next. For now, enter a name or skip straight into the default demo profile.
+          </p>
+        </div>
+
+        <form id="demo-login-form" class="demo-form">
+          <label class="demo-label" for="demo-name-input">Your Name</label>
+          <input
+            class="demo-input"
+            id="demo-name-input"
+            name="partnerName"
+            type="text"
+            autocomplete="name"
+            placeholder="Benjamin"
+          >
+
+          <div class="demo-meta-row">
+            <div class="demo-meta-card">
+              <div class="demo-meta-label">Workspace</div>
+              <div class="demo-meta-value">Cal &amp; Rye</div>
+            </div>
+            <div class="demo-meta-card">
+              <div class="demo-meta-label">Auth Mode</div>
+              <div class="demo-meta-value">Local Demo</div>
+            </div>
+          </div>
+
+          <button class="demo-primary" type="submit">Enter Demo Workspace</button>
+        </form>
+
+        <button class="demo-secondary" id="demo-skip-button" type="button">Use Default Demo Profile</button>
+
+        <div class="demo-footnote">
+          No email required yet. This demo just stores a lightweight local session in the browser.
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="phone">
+  <div class="island"></div>
+  <div class="sbar">
+    <div class="stime">9:41</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <svg width="16" height="11" viewBox="0 0 17 12" fill="rgba(10,10,10,0.78)"><rect x="0" y="4" width="3" height="8" rx="1" opacity="0.3"/><rect x="4.5" y="2" width="3" height="10" rx="1" opacity="0.55"/><rect x="9" y="0" width="3" height="12" rx="1" opacity="0.75"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" stroke="rgba(10,10,10,0.78)" stroke-width="1.4" stroke-linecap="round"><path d="M1 3.5C3.5 1.2 6.1 0 7.5 0s4 1.2 6.5 3.5"/><path d="M3 6c1.2-1.2 2.8-2 4.5-2s3.3.8 4.5 2"/><path d="M5 8.5C5.8 7.8 6.6 7.5 7.5 7.5s1.7.3 2.5 1"/><circle cx="7.5" cy="10.5" r="1" fill="rgba(10,10,10,0.78)" stroke="none"/></svg>
+      <svg width="25" height="11" viewBox="0 0 25 12" fill="rgba(10,10,10,0.78)"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="rgba(10,10,10,0.24)" fill="none"/><rect x="2" y="2" width="15" height="8" rx="2"/><path d="M22.5 4v4a2 2 0 000-4z" opacity="0.4"/></svg>
+    </div>
+  </div>
+
+  <div class="screen">
+
+    <!-- ══════ HOME ══════ -->
+    <div class="ts active" id="screen-home">
+      <div class="home-hdr">
+        <div>
+          <div class="home-greeting">Welcome back</div>
+          <div class="home-name" id="partner-display-name">Benjamin</div>
+          <div class="session-row">
+            <span class="session-chip">Demo Session</span>
+            <button class="session-link" id="demo-signout" type="button">Sign out</button>
+          </div>
+        </div>
+        <div class="hdr-btns">
+          <div class="hdr-btn" onclick="switchTab('reports')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="hdr-btn" onclick="switchTab('messages')">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Snapshot hero -->
+      <div class="snap-card">
+        <div class="snap-eyebrow">Account Snapshot</div>
+        <div class="snap-brand">Cal &amp; Rye</div>
+        <div class="snap-kpis">
+          <div class="sk">
+            <div class="skv" style="color:var(--green)">$8,120</div>
+            <div class="skl">This Week<br>Profit</div>
+          </div>
+          <div class="sk">
+            <div class="skv" style="color:var(--purple2)">847</div>
+            <div class="skl">Units<br>in FBA</div>
+          </div>
+          <div class="sk">
+            <div class="skv" style="color:var(--orange)">3</div>
+            <div class="skl">Open<br>POs</div>
+          </div>
+        </div>
+        <div class="snap-footer">
+          <div class="ldot"></div>
+          Live  |  Updated just now
+        </div>
+      </div>
+
+      <!-- Tab filter -->
+      <div class="tabs-row">
+        <button class="tab-btn on">Overview</button>
+        <button class="tab-btn" onclick="switchTab('reports')">Reports</button>
+        <button class="tab-btn" onclick="switchTab('orders')">Orders</button>
+        <button class="tab-btn"> |  |  | </button>
+      </div>
+
+      <div class="slbl">Quick Actions</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 22px;margin-bottom:22px">
+        <div class="qa-btn" onclick="switchTab('conv')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+          <div style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--text)">Message Team</div>
+        </div>
+        <div class="qa-btn" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
+          </div>
+          <div style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--text)">Book a Call</div>
+        </div>
+        <div class="qa-btn" onclick="switchTab('orders')" style="background:var(--surface);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          </div>
+          <div style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--text)">Approve PO</div>
+        </div>
+        <div class="qa-btn" onclick="switchTab('urgent')" style="background:var(--surface);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px;position:relative" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="width:34px;height:34px;border-radius:10px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--text)">Urgent Tasks</div>
+          <!-- Badge count -->
+          <div style="position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--red);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(10,10,10,.08)">3</div>
+        </div>
+      </div>
+
+      <div class="slbl">Your Account</div>
+      <div class="alist">
+        <div class="ar green" onclick="switchTab('reports')">
+          <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="abody"><div class="aname">Weekly Report</div><div class="asub">Mar 20  |  2 SKUs  |  AI summary ready</div></div>
+          <div class="aright"><div class="aval" style="color:var(--green)">$8,120</div><span class="pill pb">New</span></div>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="ar orange" onclick="switchTab('inventory')">
+          <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+          <div class="abody"><div class="aname">Inventory</div><div class="asub">Warehouse + FBA  |  1 low stock alert</div></div>
+          <div class="aright"><div class="aval">1,243</div><span class="pill po">Low Stock</span></div>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="ar purple2" onclick="switchTab('orders')">
+          <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
+          <div class="abody"><div class="aname">Purchase Orders</div><div class="asub">3 open  |  1 arriving this week</div></div>
+          <div class="aright"><div class="aval" style="color:var(--purple2)">3 open</div><span class="pill pg">On Track</span></div>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+        <div class="ar blue" onclick="switchTab('fba')">
+          <div class="aico" style="background:rgba(96,165,250,.1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg></div>
+          <div class="abody"><div class="aname">FBA Inventory</div><div class="asub">Amazon fulfillment  |  live data</div></div>
+          <div class="aright"><div class="aval" style="color:var(--purple2)">847</div><span class="pill pp">Active</span></div>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ REPORTS ══════ -->
+    <div class="ts" id="screen-reports">
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Weekly Report</div><div class="psub">Mar 20, 2026</div></div>
+
+      <!-- Profit hero -->
+      <div class="profit-hero">
+        <div class="pe">Net Profit</div>
+        <div class="pv">$8,120</div>
+        <div class="pchips"><span class="pc pcg">31.2% margin</span><span class="pc pcm">580 units</span></div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="sgrid" style="margin-top:14px">
+        <div class="sg"><div class="sgv" style="color:var(--green)">$26,020</div><div class="sgl">Revenue</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--red)">$5,872</div><div class="sgl">AMZ Fees</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--purple2)">$3,340</div><div class="sgl">Ad Spend</div></div>
+      </div>
+
+      <!-- WoW Trend Chart -->
+      <div class="slbl" style="margin-top:4px">Week over Week</div>
+      <div style="margin:0 22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px 18px">
+
+        <!-- Range selector + legend row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;gap:10px">
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--green)"></div>Revenue</div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:var(--purple)"></div>Profit</div>
+          </div>
+          <!-- Time range pills -->
+          <div style="display:flex;gap:4px" id="chart-range-btns">
+            <button onclick="setChartRange('4w')"  class="range-pill active-range" id="rb-4w">4W</button>
+            <button onclick="setChartRange('8w')"  class="range-pill" id="rb-8w">8W</button>
+            <button onclick="setChartRange('3m')"  class="range-pill" id="rb-3m">3M</button>
+            <button onclick="setChartRange('6m')"  class="range-pill" id="rb-6m">6M</button>
+            <button onclick="setChartRange('1y')"  class="range-pill" id="rb-1y">1Y</button>
+          </div>
+        </div>
+
+        <!-- Tooltip -->
+        <div id="chart-tooltip" style="display:none;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;position:absolute;pointer-events:none;z-index:50;min-width:110px">
+          <div id="tt-date" style="font-size:9px;color:var(--muted);margin-bottom:4px"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:2px">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
+            <span id="tt-rev" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--green)"></span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--purple)"></div>
+            <span id="tt-pro" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--purple2)"></span>
+          </div>
+        </div>
+
+        <!-- SVG chart container -->
+        <div style="position:relative" id="chart-wrap">
+          <svg id="wow-chart" viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg"
+            style="width:100%;height:90px;overflow:visible;cursor:crosshair"
+            onmousemove="chartHover(event)" onmouseleave="chartLeave()">
+            <defs>
+              <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0A0A0A" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+              </linearGradient>
+              <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#0A0A0A" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- Y gridlines -->
+            <line x1="0" y1="0"  x2="300" y2="0"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+            <line x1="0" y1="30" x2="300" y2="30" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+            <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+            <line x1="0" y1="90" x2="300" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+            <!-- Revenue fill + line -->
+            <path id="rev-area" fill="url(#gr)" opacity="0.7"/>
+            <path id="rev-line" fill="none" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Profit fill + line -->
+            <path id="pro-area" fill="url(#gp)" opacity="0.7"/>
+            <path id="pro-line" fill="none" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Hover crosshair -->
+            <line id="crosshair" x1="0" y1="0" x2="0" y2="90" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3" display="none"/>
+            <!-- Hover dots -->
+            <circle id="hover-rev-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2" display="none"/>
+            <circle id="hover-pro-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2" display="none"/>
+            <!-- End dots -->
+            <circle id="end-rev-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2"/>
+            <circle id="end-pro-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2"/>
+          </svg>
+        </div>
+
+        <!-- X-axis labels -->
+        <div id="chart-labels" style="display:flex;justify-content:space-between;margin-top:6px"></div>
+
+        <!-- Delta callouts -->
+        <div style="display:flex;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
+          <div style="flex:1;background:rgba(10,10,10,.08);border:1px solid rgba(10,10,10,.08);border-radius:10px;padding:8px 10px">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:2px" id="delta-rev-label">Revenue vs last wk</div>
+            <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--green)" id="delta-rev">+12.4%</div>
+          </div>
+          <div style="flex:1;background:rgba(10,10,10,.08);border:1px solid rgba(10,10,10,.08);border-radius:10px;padding:8px 10px">
+            <div style="font-size:9px;color:var(--muted);margin-bottom:2px" id="delta-pro-label">Profit vs last wk</div>
+            <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--purple2)" id="delta-pro">+8.1%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SKU Breakdown -->
+      <div class="slbl">SKU Breakdown</div>
+      <div class="slist">
+        <div class="sr"><div class="sdot" style="background:var(--green)"></div><div style="flex:1"><div class="sn">Bookshelf for Kids</div><div class="sm">340 units  |  ACoS 11.2%</div></div><div><div class="spro">$5,440</div><div class="smgn">33.1% margin</div></div></div>
+        <div class="sr"><div class="sdot" style="background:var(--blue)"></div><div style="flex:1"><div class="sn">Kids Art Table</div><div class="sm">240 units  |  ACoS 14.8%</div></div><div><div class="spro" style="color:var(--blue)">$2,680</div><div class="smgn">28.4% margin</div></div></div>
+      </div>
+
+      <!-- AI Summary -->
+      <div class="aicard">
+        <div class="aihd"><span class="aibadge">AI</span><span class="aititle">Account Summary</span></div>
+        <div class="aibody">Strong week for Cal &amp; Rye with both SKUs performing above 28% margin. Bookshelf leads at 33% with efficient ad spend.</div>
+        <div class="aitems">
+          <div class="aiitem"><div class="aidot" style="background:var(--green)"></div>Both SKUs above target margin threshold</div>
+          <div class="aiitem"><div class="aidot" style="background:var(--green)"></div>ACoS well below 20% across all campaigns</div>
+          <div class="aiitem"><div class="aidot" style="background:var(--yellow)"></div>Kids Art Table inventory running low  -  reorder advised</div>
+          <div class="aiitem"><div class="aidot" style="background:var(--red)"></div>Storage fees trending up  -  review inbound timing</div>
+        </div>
+      </div>
+
+      <!-- Document Archive -->
+      <div class="slbl">Report Archive</div>
+      <div style="padding:0 22px;display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
+
+        <!-- Current week - highlighted -->
+        <div onclick="openReport('mar20')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
+          <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 20, 2026</div>
+            <div style="font-size:10px;color:var(--muted)">$8,120 profit  |  31.2% margin</div>
+          </div>
+          <span class="pill pb">Current</span>
+        </div>
+
+        <div onclick="openReport('mar13')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 13, 2026</div>
+            <div style="font-size:10px;color:var(--muted)">$7,510 profit  |  29.8% margin</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <div onclick="openReport('mar6')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 6, 2026</div>
+            <div style="font-size:10px;color:var(--muted)">$6,890 profit  |  28.1% margin</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <div onclick="openReport('feb27')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <div style="flex:1">
+            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Feb 27, 2026</div>
+            <div style="font-size:10px;color:var(--muted)">$7,200 profit  |  30.4% margin</div>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+
+        <!-- View all -->
+        <div style="text-align:center;padding:10px 0">
+          <span style="font-size:11px;color:var(--purple);font-weight:600;cursor:pointer;letter-spacing:.04em">View all reports →</span>
+        </div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ INVENTORY ══════ -->
+    <div class="ts" id="screen-inventory">
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Inventory</div><div class="psub">Angora Warehouse + FBA</div></div>
+      <div class="igrid">
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div class="iv" style="color:var(--blue)">396</div><div class="il">In Warehouse</div><div class="is">Angora network</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/></svg><div class="iv" style="color:var(--purple2)">847</div><div class="il">In FBA</div><div class="is">Amazon centers</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><div class="iv" style="color:var(--text)">1,243</div><div class="il">Total Units</div><div class="is">All locations</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><div class="iv" style="color:var(--orange);font-size:18px">21 days</div><div class="il">Runway</div><div class="is">At current velocity</div></div>
+      </div>
+      <div class="slbl">By SKU</div>
+      <div class="slist">
+        <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--green);margin-top:5px"></div><div><div class="sin">Bookshelf for Kids</div><div class="siloc">Warehouse: 280  |  FBA: 540</div></div></div><div><div class="sic" style="color:var(--text)">820</div><span class="pill pg">Healthy</span></div></div><div class="prow"><span>820 / 1,000 target</span><span>82%</span></div><div class="pbar"><div class="pfill" style="width:82%;background:var(--green)"></div></div></div>
+        <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--orange);margin-top:5px"></div><div><div class="sin">Kids Art Table</div><div class="siloc">Warehouse: 116  |  FBA: 307</div></div></div><div><div class="sic" style="color:var(--orange)">423</div><span class="pill po">Low Stock</span></div></div><div class="prow"><span>423 / 800 target</span><span style="color:var(--orange)">53%</span></div><div class="pbar"><div class="pfill" style="width:53%;background:var(--orange)"></div></div></div>
+      </div>
+      <div class="adv"><div class="advhd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="advlbl">Reorder Advisory</span></div><div class="advtxt">Kids Art Table is projected to stock out in <span class="advhl">~14 days</span> at current sell rate. A new PO is recommended within the next 3–5 days.</div></div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ ORDERS ══════ -->
+    <div class="ts" id="screen-orders">
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Purchase Orders</div><div class="psub">Cal &amp; Rye</div></div>
+      <div class="sgrid" style="margin-bottom:24px">
+        <div class="sg"><div class="sgv" style="color:var(--blue)">3</div><div class="sgl">Open POs</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--text);font-size:13px">$24,800</div><div class="sgl">Total Value</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--green)">1,840</div><div class="sgl">Inbound</div></div>
+      </div>
+      <div class="slbl">Order Timeline</div>
+      <div class="tlwrap">
+        <div class="tli"><div class="tleft"><div class="tldot tlo"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0142</div><div><div class="podlbl">Arriving</div><div class="podate" style="color:var(--orange)">Feb 26</div></div></div><div class="podet">Kids Art Table × 400 units<br>$10,200  |  Transit from warehouse → FBA</div><div class="poft"><span class="pill po">In Transit</span><span class="pods">2 days out</span></div></div></div>
+        <div class="tli"><div class="tleft"><div class="tldot tlb"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0138</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--blue)">Mar 4</div></div></div><div class="podet">Bookshelf for Kids × 800 units<br>$9,600  |  Production → Angora warehouse</div><div class="poft"><span class="pill pb">In Production</span><span class="pods">8 days out</span></div></div></div>
+        <div class="tli"><div class="tleft"><div class="tldot tlg"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0131</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--muted)">Mar 18</div></div></div><div class="podet">Kids Art Table × 640 units<br>$5,000  |  Awaiting factory confirmation</div><div class="poft"><span class="pill pm">Pending</span><span class="pods">22 days out</span></div></div></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ FBA ══════ -->
+    <div class="ts" id="screen-fba">
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">FBA Inventory</div><div class="psub">Amazon Fulfillment Centers</div></div>
+      <div class="sgrid" style="margin-bottom:22px">
+        <div class="sg"><div class="sgv" style="color:var(--purple2)">847</div><div class="sgl">Total Units</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--orange)">12.8%</div><div class="sgl">ACoS</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--green);font-size:13px">28 days</div><div class="sgl">Days of Stock</div></div>
+      </div>
+      <div class="slbl">FBA by SKU</div>
+      <div class="slist">
+        <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div><div class="fn">Bookshelf for Kids</div><div class="floc">540 units  |  SFO4</div></div></div><div><div class="fcount" style="color:var(--green)">540</div><span class="pill pg" style="float:right;margin-top:4px">Healthy</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~85 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--green)">~36 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.42/u</div></div></div></div>
+        <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><div><div class="fn">Kids Art Table</div><div class="floc">307 units  |  LGB4</div></div></div><div><div class="fcount" style="color:var(--orange)">307</div><span class="pill po" style="float:right;margin-top:4px">Low</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~150 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--orange)">~14 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.61/u</div></div></div></div>
+      </div>
+      <div class="ibcard"><div class="iblbl">Inbound Shipment</div><div class="ibrow"><div><div class="ibpo">PO-2026-0142 → FBA</div><div class="ibsub">400 units  |  Kids Art Table  |  Arriving Feb 26</div></div><span class="pill po">In Transit</span></div></div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ MESSAGES ══════ -->
+    <div class="ts" id="screen-messages">
+      <div class="mhdr"><div class="mtitle">Messages</div><div class="msub">Your Angora team</div></div>
+      <div class="nmb"><div class="nmico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="nmlbl">New Message</div><div class="nmsub">Start a conversation with your team</div></div></div>
+      <div class="slbl">Conversations</div>
+      <div class="clist">
+        <div class="crow unread" onclick="switchTab('conv')"><div class="cav" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">AT<div class="conl"></div></div><div class="cbody"><div class="cname">Angora Team</div><div class="cprev">Your Mar 20 report is published and…</div></div><div class="cmeta"><div class="ctime">9:38 AM</div><div class="ubadge">2</div></div></div>
+        <div class="crow" onclick="switchTab('conv')"><div class="cav" style="background:linear-gradient(135deg,#059669,#0A0A0A)">SR</div><div class="cbody"><div class="cname">Sarah R.  -  Account Manager</div><div class="cprev">Reorder advisory sent for Kids Art…</div></div><div class="cmeta"><div class="ctime">Yesterday</div></div></div>
+        <div class="crow" onclick="switchTab('conv')"><div class="cav" style="background:linear-gradient(135deg,#c2410c,#767C89)"><span style="font-size:10px;font-weight:800">OPS</span></div><div class="cbody"><div class="cname">Ops &amp; Logistics</div><div class="cprev">Shipment PO-2026-0142 has cleared cus…</div></div><div class="cmeta"><div class="ctime">Feb 22</div></div></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ CONVERSATION ══════ -->
+    <div class="ts" id="screen-conv">
+      <style>
+        .conv-hdr{display:flex;align-items:center;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+        .conv-hdr-av{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#6b4fcc,#0A0A0A);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;font-weight:800;color:#fff;flex-shrink:0;position:relative}
+        .conv-hdr-online{position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--bg);box-shadow:0 0 6px var(--green)}
+        .conv-hdr-info{flex:1}
+        .conv-hdr-name{font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)}
+        .conv-hdr-status{font-size:10px;color:var(--green);margin-top:1px}
+        .msg-list{padding:16px 22px;display:flex;flex-direction:column;gap:12px;min-height:400px}
+        .msg-row{display:flex;gap:8px;align-items:flex-end}
+        .msg-row.me{flex-direction:row-reverse}
+        .msg-av{width:28px;height:28px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff}
+        .bubble{max-width:72%;padding:11px 14px;border-radius:16px;font-size:12px;line-height:1.6}
+        .bubble.them{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px}
+        .bubble.me{background:linear-gradient(135deg,#6b4fcc,#0A0A0A);color:#fff;border-bottom-right-radius:4px}
+        .msg-time{font-size:9px;color:var(--muted);text-align:center;margin:4px 0}
+        .conv-input-bar{padding:12px 22px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+        .conv-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:22px;padding:10px 16px;font-size:12px;color:var(--text);outline:none;font-family:var(--sans)}
+        .conv-input::placeholder{color:var(--muted)}
+        .conv-input:focus{border-color:rgba(10,10,10,.08)}
+        .send-btn{width:36px;height:36px;border-radius:11px;background:var(--purple);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;box-shadow:0 0 12px rgba(10,10,10,.08);transition:all .18s}
+        .send-btn:hover{background:var(--purple2);transform:scale(1.05)}
+      </style>
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:10px;padding:18px 22px 0">
+        <div class="back" style="margin-bottom:0" onclick="switchTab('messages')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="conv-hdr-av">AT<div class="conv-hdr-online"></div></div>
+        <div class="conv-hdr-info">
+          <div class="conv-hdr-name">Angora Team</div>
+          <div class="conv-hdr-status">● Online now</div>
+        </div>
+      </div>
+      <!-- Messages -->
+      <div class="msg-list">
+        <div class="msg-time">Today  |  9:38 AM</div>
+        <div class="msg-row">
+          <div class="msg-av" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">AT</div>
+          <div class="bubble them">Your Mar 20 weekly report is published and ready to review. Strong week overall! 🎉</div>
+        </div>
+        <div class="msg-row">
+          <div class="msg-av" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">AT</div>
+          <div class="bubble them">Net profit came in at $8,120  -  both SKUs performing above 28% margin. Bookshelf for Kids leading at 33.1%.</div>
+        </div>
+        <div class="msg-row me">
+          <div class="msg-av" style="background:linear-gradient(135deg,#2563eb,#767C89)">JD</div>
+          <div class="bubble me">That's great! What about the Kids Art Table inventory situation?</div>
+        </div>
+        <div class="msg-row">
+          <div class="msg-av" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">AT</div>
+          <div class="bubble them">Good catch  -  Kids Art Table is projected to stock out in ~14 days at current sell rate. We recommend placing a new PO within the next 3–5 days.</div>
+        </div>
+        <div class="msg-row">
+          <div class="msg-av" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">AT</div>
+          <div class="bubble them">PO-2026-0142 is already in transit and arrives Feb 26, which will help bridge the gap.</div>
+        </div>
+        <div class="msg-row me">
+          <div class="msg-av" style="background:linear-gradient(135deg,#2563eb,#767C89)">JD</div>
+          <div class="bubble me">Got it, I'll approve the new PO today. Thanks!</div>
+        </div>
+        <div class="msg-time" style="margin-top:4px">Seen  |  9:41 AM</div>
+      </div>
+      <!-- Input -->
+      <div class="conv-input-bar">
+        <input class="conv-input" type="text" placeholder="Message Angora Team…">
+        <button class="send-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════ ARCHIVED REPORT DETAIL ══════ -->
+    <div class="ts" id="screen-report-detail">
+      <div class="ph">
+        <div class="back" onclick="switchTab('reports')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="ptitle" id="rd-title">Weekly Report</div>
+        <div class="psub" id="rd-date"> - </div>
+      </div>
+
+      <!-- Profit hero -->
+      <div class="profit-hero">
+        <div class="pe">Net Profit</div>
+        <div class="pv" id="rd-profit"> - </div>
+        <div class="pchips">
+          <span class="pc pcg" id="rd-margin"> - </span>
+          <span class="pc pcm" id="rd-units"> - </span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="sgrid" style="margin-top:14px">
+        <div class="sg"><div class="sgv" id="rd-rev" style="color:var(--green)"> - </div><div class="sgl">Revenue</div></div>
+        <div class="sg"><div class="sgv" id="rd-fees" style="color:var(--red)"> - </div><div class="sgl">AMZ Fees</div></div>
+        <div class="sg"><div class="sgv" id="rd-ads" style="color:var(--purple2)"> - </div><div class="sgl">Ad Spend</div></div>
+      </div>
+
+      <!-- SKU breakdown -->
+      <div class="slbl" style="margin-top:4px">SKU Breakdown</div>
+      <div class="slist" id="rd-skus"></div>
+
+      <!-- AI Summary -->
+      <div class="aicard">
+        <div class="aihd"><span class="aibadge">AI</span><span class="aititle">Account Summary</span></div>
+        <div class="aibody" id="rd-summary"> - </div>
+        <div class="aitems" id="rd-bullets"></div>
+      </div>
+      <div class="sp"></div>
+    </div>
+
+    <!-- ══════ URGENT TASKS ══════ -->
+    <div class="ts" id="screen-urgent">
+      <div class="ph">
+        <div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+        <div class="ptitle">Urgent Tasks</div>
+        <div class="psub">3 items need your attention</div>
+      </div>
+
+      <div style="padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+
+        <!-- Task 1: Invalid payment -->
+        <div style="background:linear-gradient(135deg,rgba(10,10,10,.08),rgba(10,10,10,.08));border:1px solid rgba(10,10,10,.08);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Invalid Payment Method</div>
+                <span class="pill pr">Urgent</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px">Your Amazon Seller Central charge method has been declined. Ad campaigns are at risk of pausing within 24 hours if not resolved.</div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:var(--red);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:#fff">Update in Seller Central →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task 2: Approve PO -->
+        <div style="background:linear-gradient(135deg,rgba(10,10,10,.08),rgba(10,10,10,.08));border:1px solid rgba(10,10,10,.08);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Approve Purchase Order</div>
+                <span class="pill po">Action</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:4px"><span style="color:var(--text);font-weight:600">PO-2026-0143</span>  |  Kids Art Table × 640 units</div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:12px">$12,800  |  Factory ready to ship  -  approval needed to proceed</div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:var(--orange);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" onclick="switchTab('orders')">
+                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:#fff">Approve PO →</span>
+                </div>
+                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                  <span style="font-family:var(--display);font-size:11px;font-weight:600;color:var(--muted)">Decline</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task 3: Campaign Manager -->
+        <div style="background:linear-gradient(135deg,rgba(251,191,36,.07),rgba(251,191,36,.02));border:1px solid rgba(251,191,36,.2);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(251,191,36,.38)'" onmouseout="this.style.borderColor='rgba(251,191,36,.2)'">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:38px;height:38px;border-radius:11px;background:rgba(251,191,36,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Campaign Budget Depleted</div>
+                <span class="pill" style="background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.22)">Review</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px">2 Sponsored Products campaigns for Kids Art Table hit daily budget cap before 3 PM yesterday. Estimated missed revenue: <span style="color:var(--yellow);font-weight:600">~$340</span>. Consider increasing daily budgets.</div>
+              <div style="display:flex;gap:8px">
+                <div style="flex:1;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'" onclick="switchTab('conv')">
+                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:var(--yellow)">Ask Ops Team →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="sp"></div>
+    </div>
+
+  </div><!-- /screen -->
+  <div class="tbar">
+    <div class="ti active" id="tab-home" onclick="switchTab('home')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/></svg>
+      <span class="tl">Home</span>
+    </div>
+    <div class="ti" id="tab-reports" onclick="switchTab('reports')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="tl">Reports</span>
+    </div>
+    <div class="ti" id="tab-inventory" onclick="switchTab('inventory')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      <span class="tl">Inventory</span>
+    </div>
+    <div class="ti" id="tab-orders" onclick="switchTab('orders')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+      <span class="tl">Orders</span>
+    </div>
+    <div class="ti" id="tab-messages" onclick="switchTab('messages')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span class="tl">Messages</span>
+    </div>
+  </div>
+</div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "angora-partner-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Angora Partner dashboard prototype converted into a maintainable Vite app.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "vite": "^8.0.1"
+  }
+}
