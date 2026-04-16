@@ -1,3 +1,5 @@
+import { supabase } from './supabase.js';
+
 const SCREENS = {
   home: "home",
   reports: "reports",
@@ -365,58 +367,45 @@ function setAuthenticatedView(isAuthenticated) {
   }, 40);
 }
 
-function loginDemo(name) {
-  const partnerName = setPartnerName(name);
-
-  saveState({
-    authenticated: true,
-    partnerName,
-    screen: DEFAULT_SCREEN,
+async function loginWithGoogle() {
+  const btn = document.getElementById("google-signin-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Redirecting…";
+  }
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin },
   });
-
-  switchTab(DEFAULT_SCREEN, { persist: false });
-  setAuthenticatedView(true);
+  if (error) {
+    console.error("Google sign-in error:", error.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg class="google-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google`;
+    }
+  }
 }
 
-function logoutDemo() {
-  const partnerName = setPartnerName(
-    document.getElementById("partner-display-name")?.textContent,
-    { syncInput: true }
-  );
-
-  saveState({
-    authenticated: false,
-    partnerName,
-    screen: DEFAULT_SCREEN,
-  });
-
+async function logoutUser() {
+  await supabase.auth.signOut();
+  saveState({ authenticated: false, partnerName: "", screen: DEFAULT_SCREEN });
   switchTab(DEFAULT_SCREEN, { persist: false });
   setAuthenticatedView(false);
 }
 
 function bindAuthControls() {
-  const loginForm = document.getElementById("demo-login-form");
-  const skipButton = document.getElementById("demo-skip-button");
+  const googleBtn = document.getElementById("google-signin-btn");
   const signOutButton = document.getElementById("demo-signout");
-  const nameInputNode = document.getElementById("demo-name-input");
 
-  if (loginForm) {
-    loginForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const formData = new FormData(loginForm);
-      loginDemo(formData.get("partnerName"));
-    });
-  }
-
-  if (skipButton) {
-    skipButton.addEventListener("click", () => {
-      loginDemo(nameInputNode?.value);
+  if (googleBtn) {
+    googleBtn.addEventListener("click", () => {
+      loginWithGoogle();
     });
   }
 
   if (signOutButton) {
     signOutButton.addEventListener("click", () => {
-      logoutDemo();
+      logoutUser();
     });
   }
 }
@@ -905,7 +894,7 @@ function chartLeave() {
   }
 }
 
-function initializeApp() {
+async function initializeApp() {
   const savedState = loadState();
   const startingRange =
     typeof savedState.range === "string" && RANGE_OPTIONS.includes(savedState.range)
@@ -920,8 +909,6 @@ function initializeApp() {
       ? savedState.reportId
       : currentReportId;
   const savedPartnerName = typeof savedState.partnerName === "string" ? savedState.partnerName : "";
-  const isAuthenticated = savedState.authenticated === true;
-
   updateMotionPreference();
   if (typeof REDUCED_MOTION_QUERY.addEventListener === "function") {
     REDUCED_MOTION_QUERY.addEventListener("change", updateMotionPreference);
@@ -938,7 +925,33 @@ function initializeApp() {
   switchTab(startingScreen, { persist: false });
   updateStatusTime();
   window.setInterval(updateStatusTime, 30000);
-  setAuthenticatedView(isAuthenticated);
+
+  // Check Supabase session (handles OAuth redirect callback automatically)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const name = session.user?.user_metadata?.full_name ||
+                 session.user?.user_metadata?.name ||
+                 session.user?.email?.split("@")[0] || "";
+    setPartnerName(name, { syncInput: true });
+    saveState({ authenticated: true, partnerName: name, screen: startingScreen });
+    setAuthenticatedView(true);
+  } else {
+    setAuthenticatedView(false);
+  }
+
+  // Keep session in sync across tabs
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session) {
+      const name = session.user?.user_metadata?.full_name ||
+                   session.user?.user_metadata?.name ||
+                   session.user?.email?.split("@")[0] || "";
+      setPartnerName(name, { syncInput: true });
+      saveState({ authenticated: true, partnerName: name, screen: DEFAULT_SCREEN });
+      setAuthenticatedView(true);
+    } else {
+      setAuthenticatedView(false);
+    }
+  });
 }
 
 window.switchTab = switchTab;
