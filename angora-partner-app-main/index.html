@@ -273,15 +273,15 @@
       <!-- Profit hero -->
       <div class="profit-hero">
         <div class="pe">Net Profit</div>
-        <div class="pv">$8,120</div>
-        <div class="pchips"><span class="pc pcg">31.2% margin</span><span class="pc pcm">580 units</span></div>
+        <div class="pv" id="rpt-profit">—</div>
+        <div class="pchips"><span class="pc pcg" id="rpt-margin">—</span><span class="pc pcm" id="rpt-units">—</span></div>
       </div>
 
       <!-- Stats row -->
       <div class="sgrid" style="margin-top:14px">
-        <div class="sg"><div class="sgv" style="color:var(--green)">$26,020</div><div class="sgl">Revenue</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--red)">$5,872</div><div class="sgl">AMZ Fees</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--purple2)">$3,340</div><div class="sgl">Ad Spend</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--green)" id="rpt-revenue">—</div><div class="sgl">Revenue</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--red)" id="rpt-fees">—</div><div class="sgl">AMZ Fees</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--purple2)" id="rpt-ads">—</div><div class="sgl">Ad Spend</div></div>
       </div>
 
       <!-- WoW Trend Chart -->
@@ -466,14 +466,14 @@
 
     <!-- ══════ ORDERS ══════ -->
     <div class="ts" id="screen-orders">
-      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Purchase Orders</div><div class="psub">Cal &amp; Rye</div></div>
-      <div class="sgrid" style="margin-bottom:24px">
-        <div class="sg"><div class="sgv" style="color:var(--blue)">3</div><div class="sgl">Open POs</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--text);font-size:13px">$24,800</div><div class="sgl">Total Value</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--green)">1,840</div><div class="sgl">Inbound</div></div>
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap=" round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Purchase Orders</div><div class="psub" id="po-sub">—</div></div>
+      <div class="sgrid" style="margin-bottom:24px" id="po-stats">
+        <div class="sg"><div class="sgv" style="color:var(--blue)" id="po-k-open">—</div><div class="sgl">Open POs</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--text);font-size:13px" id="po-k-value">—</div><div class="sgl">Total Value</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--green)" id="po-k-units">—</div><div class="sgl">Inbound</div></div>
       </div>
       <div class="slbl">Order Timeline</div>
-      <div class="tlwrap">
+      <div class="tlwrap" id="po-timeline">
         <div class="tli"><div class="tleft"><div class="tldot tlo"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0142</div><div><div class="podlbl">Arriving</div><div class="podate" style="color:var(--orange)">Feb 26</div></div></div><div class="podet">Kids Art Table × 400 units<br>$10,200  |  Transit from warehouse → FBA</div><div class="poft"><span class="pill po">In Transit</span><span class="pods">2 days out</span></div></div></div>
         <div class="tli"><div class="tleft"><div class="tldot tlb"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0138</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--blue)">Mar 4</div></div></div><div class="podet">Bookshelf for Kids × 800 units<br>$9,600  |  Production → Angora warehouse</div><div class="poft"><span class="pill pb">In Production</span><span class="pods">8 days out</span></div></div></div>
         <div class="tli"><div class="tleft"><div class="tldot tlg"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0131</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--muted)">Mar 18</div></div></div><div class="podet">Kids Art Table × 640 units<br>$5,000  |  Awaiting factory confirmation</div><div class="poft"><span class="pill pm">Pending</span><span class="pods">22 days out</span></div></div></div>
