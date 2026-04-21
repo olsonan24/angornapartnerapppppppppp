@@ -580,39 +580,3 @@ body:not(.authenticated) .login-story{padding:22px;border-radius:24px}
 body:not(.authenticated) .login-preview-grid,.demo-meta-row{grid-template-columns:1fr}
 .tbar{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
 }
-
-/* Google Sign-In Button */
-.google-signin-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 13px 20px;
-  background: #fff;
-  border: 1.5px solid rgba(10,10,10,.18);
-  border-radius: 12px;
-  font-family: 'Roboto', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  color: rgba(10,10,10,.82);
-  cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
-  box-shadow: 0 1px 4px rgba(10,10,10,.06);
-  margin-bottom: 4px;
-}
-.google-signin-btn:hover {
-  background: rgba(10,10,10,.03);
-  border-color: rgba(10,10,10,.28);
-  box-shadow: 0 2px 8px rgba(10,10,10,.10);
-}
-.google-signin-btn:active {
-  background: rgba(10,10,10,.06);
-}
-.google-signin-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.google-icon {
-  flex-shrink: 0;
-}
