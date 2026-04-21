@@ -10,6 +10,17 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Initialize Supabase client (same project as Garden)
+    window.ANGORA_SUPABASE_URL = "https://temzkjhkqnrtdwxckioy.supabase.co";
+    window.ANGORA_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsImtpZCI6IkxjUlIzM1JLMXpsWm9BS0QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbXpramhrcW5ydGR3eGNraW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA4MjMsImV4cCI6MjA3NTUzNjgyM30.6ReTVPQ1l6JG97TL-o4hdl8Z7r9uiLoNH4cEMWD-m8M";
+    window.addEventListener("DOMContentLoaded", () => {
+      if (window.supabase) {
+        window.angoraSupabase = window.supabase.createClient(window.ANGORA_SUPABASE_URL, window.ANGORA_SUPABASE_ANON_KEY);
+      }
+    });
+  </script>
 </head>
 <body>
 <div class="login-shell" id="login-shell">
@@ -78,36 +89,51 @@
     <section class="login-panel">
       <div class="login-card">
         <div class="login-card-top">
-          <div class="login-card-eyebrow">Secure Access</div>
-          <h2 class="login-card-title">Sign in to your workspace</h2>
+          <div class="login-card-eyebrow">Demo Access</div>
+          <h2 class="login-card-title">Enter the workspace</h2>
           <p class="login-card-copy">
-            Use your Google account to access the Angora Partner portal. Secure and effortless every time.
+            Email and password can come next. For now, enter a name or skip straight into the default demo profile.
           </p>
         </div>
 
-        <button class="google-signin-btn" id="google-signin-btn" type="button">
-          <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-          </svg>
-          Continue with Google
-        </button>
+        <form id="demo-login-form" class="demo-form">
+          <label class="demo-label" for="demo-name-input">Your Name</label>
+          <input
+            class="demo-input"
+            id="demo-name-input"
+            name="partnerName"
+            type="text"
+            autocomplete="name"
+            placeholder="Benjamin"
+          >
 
-        <div class="demo-meta-row">
-          <div class="demo-meta-card">
-            <div class="demo-meta-label">Workspace</div>
-            <div class="demo-meta-value">Cal &amp; Rye</div>
+          <div class="demo-meta-row">
+            <div class="demo-meta-card">
+              <div class="demo-meta-label">Workspace</div>
+              <div class="demo-meta-value">Cal &amp; Rye</div>
+            </div>
+            <div class="demo-meta-card">
+              <div class="demo-meta-label">Auth Mode</div>
+              <div class="demo-meta-value">Local Demo</div>
+            </div>
           </div>
-          <div class="demo-meta-card">
-            <div class="demo-meta-label">Auth Mode</div>
-            <div class="demo-meta-value">Google OAuth</div>
-          </div>
-        </div>
+
+          <button class="demo-primary" type="submit">Enter Demo Workspace</button>
+        </form>
+
+        <button class="demo-secondary" id="demo-skip-button" type="button">Use Default Demo Profile</button>
 
         <div class="demo-footnote">
-          Sign in securely with your Google account. Your session is managed by Supabase Auth.
+          No email required yet. This demo just stores a lightweight local session in the browser.
+        </div>
+
+        <div style="margin-top:18px;padding-top:18px;border-top:1px solid rgba(10,10,10,0.08)">
+          <div class="demo-meta-label" style="margin-bottom:8px">Real Partner Sign In</div>
+          <form id="real-login-form" class="demo-form" style="gap:8px">
+            <input class="demo-input" id="real-login-email" type="email" placeholder="your-email@brand.com" autocomplete="email" required>
+            <button class="demo-primary" type="submit" style="margin-top:4px">Send Magic Link</button>
+            <div id="real-login-msg" style="font-size:10px;color:var(--muted);text-align:center;margin-top:4px"></div>
+          </form>
         </div>
       </div>
     </section>
@@ -151,24 +177,24 @@
       <!-- Snapshot hero -->
       <div class="snap-card">
         <div class="snap-eyebrow">Account Snapshot</div>
-        <div class="snap-brand">Cal &amp; Rye</div>
+        <div class="snap-brand" id="home-brand">Cal &amp; Rye</div>
         <div class="snap-kpis">
           <div class="sk">
-            <div class="skv" style="color:var(--green)">$8,120</div>
+            <div class="skv" style="color:var(--green)" id="home-kpi-profit">$8,120</div>
             <div class="skl">This Week<br>Profit</div>
           </div>
           <div class="sk">
-            <div class="skv" style="color:var(--purple2)">847</div>
+            <div class="skv" style="color:var(--purple2)" id="home-kpi-fba">847</div>
             <div class="skl">Units<br>in FBA</div>
           </div>
           <div class="sk">
-            <div class="skv" style="color:var(--orange)">3</div>
+            <div class="skv" style="color:var(--orange)" id="home-kpi-pos">3</div>
             <div class="skl">Open<br>POs</div>
           </div>
         </div>
         <div class="snap-footer">
           <div class="ldot"></div>
-          Live  |  Updated just now
+          <span id="home-updated">Live  |  Updated just now</span>
         </div>
       </div>
 
@@ -422,15 +448,15 @@
 
     <!-- ══════ INVENTORY ══════ -->
     <div class="ts" id="screen-inventory">
-      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Inventory</div><div class="psub">Angora Warehouse + FBA</div></div>
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Inventory</div><div class="psub" id="inv-psub">Angora Warehouse + FBA</div></div>
       <div class="igrid">
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div class="iv" style="color:var(--blue)">396</div><div class="il">In Warehouse</div><div class="is">Angora network</div></div>
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/></svg><div class="iv" style="color:var(--purple2)">847</div><div class="il">In FBA</div><div class="is">Amazon centers</div></div>
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><div class="iv" style="color:var(--text)">1,243</div><div class="il">Total Units</div><div class="is">All locations</div></div>
-        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><div class="iv" style="color:var(--orange);font-size:18px">21 days</div><div class="il">Runway</div><div class="is">At current velocity</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><div class="iv" style="color:var(--blue)" id="inv-k-warehouse">396</div><div class="il">In Warehouse</div><div class="is">Angora network</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.6" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/></svg><div class="iv" style="color:var(--purple2)" id="inv-k-fba">847</div><div class="il">In FBA</div><div class="is">Amazon centers</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg><div class="iv" style="color:var(--text)" id="inv-k-total">1,243</div><div class="il">Total Units</div><div class="is">All locations</div></div>
+        <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><div class="iv" style="color:var(--orange);font-size:18px" id="inv-k-runway">21 days</div><div class="il">Runway</div><div class="is">At current velocity</div></div>
       </div>
       <div class="slbl">By SKU</div>
-      <div class="slist">
+      <div class="slist" id="inv-sku-list">
         <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--green);margin-top:5px"></div><div><div class="sin">Bookshelf for Kids</div><div class="siloc">Warehouse: 280  |  FBA: 540</div></div></div><div><div class="sic" style="color:var(--text)">820</div><span class="pill pg">Healthy</span></div></div><div class="prow"><span>820 / 1,000 target</span><span>82%</span></div><div class="pbar"><div class="pfill" style="width:82%;background:var(--green)"></div></div></div>
         <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--orange);margin-top:5px"></div><div><div class="sin">Kids Art Table</div><div class="siloc">Warehouse: 116  |  FBA: 307</div></div></div><div><div class="sic" style="color:var(--orange)">423</div><span class="pill po">Low Stock</span></div></div><div class="prow"><span>423 / 800 target</span><span style="color:var(--orange)">53%</span></div><div class="pbar"><div class="pfill" style="width:53%;background:var(--orange)"></div></div></div>
       </div>
@@ -459,12 +485,12 @@
     <div class="ts" id="screen-fba">
       <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">FBA Inventory</div><div class="psub">Amazon Fulfillment Centers</div></div>
       <div class="sgrid" style="margin-bottom:22px">
-        <div class="sg"><div class="sgv" style="color:var(--purple2)">847</div><div class="sgl">Total Units</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--orange)">12.8%</div><div class="sgl">ACoS</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--green);font-size:13px">28 days</div><div class="sgl">Days of Stock</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--purple2)" id="fba-k-total">847</div><div class="sgl">Total Units</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--orange)" id="fba-k-acos">12.8%</div><div class="sgl">ACoS</div></div>
+        <div class="sg"><div class="sgv" style="color:var(--green);font-size:13px" id="fba-k-dos">28 days</div><div class="sgl">Days of Stock</div></div>
       </div>
       <div class="slbl">FBA by SKU</div>
-      <div class="slist">
+      <div class="slist" id="fba-sku-list">
         <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div><div class="fn">Bookshelf for Kids</div><div class="floc">540 units  |  SFO4</div></div></div><div><div class="fcount" style="color:var(--green)">540</div><span class="pill pg" style="float:right;margin-top:4px">Healthy</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~85 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--green)">~36 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.42/u</div></div></div></div>
         <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><div><div class="fn">Kids Art Table</div><div class="floc">307 units  |  LGB4</div></div></div><div><div class="fcount" style="color:var(--orange)">307</div><span class="pill po" style="float:right;margin-top:4px">Low</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~150 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--orange)">~14 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.61/u</div></div></div></div>
       </div>
@@ -474,10 +500,12 @@
 
     <!-- ══════ MESSAGES ══════ -->
     <div class="ts" id="screen-messages">
-      <div class="mhdr"><div class="mtitle">Messages</div><div class="msub">Your Angora team</div></div>
+      <div class="mhdr"><div class="mtitle">Messages</div><div class="msub" id="messages-subtitle">Your Angora team</div></div>
       <div class="nmb"><div class="nmico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="nmlbl">New Message</div><div class="nmsub">Start a conversation with your team</div></div></div>
       <div class="slbl">Conversations</div>
-      <div class="clist"></div>
+      <div class="clist" id="messages-conv-list">
+        <!-- Conversations render here. Populated by renderMessagesScreen() -->
+      </div>
       <div class="sp"></div>
     </div>
 
@@ -508,18 +536,20 @@
       <!-- Header -->
       <div style="display:flex;align-items:center;gap:10px;padding:18px 22px 0">
         <div class="back" style="margin-bottom:0" onclick="switchTab('messages')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
-        <div class="conv-hdr-av">AT<div class="conv-hdr-online"></div></div>
+        <div class="conv-hdr-av" id="conv-hdr-av">AT<div class="conv-hdr-online"></div></div>
         <div class="conv-hdr-info">
-          <div class="conv-hdr-name">Angora Team</div>
-          <div class="conv-hdr-status">● Online now</div>
+          <div class="conv-hdr-name" id="conv-hdr-name">Angora Team</div>
+          <div class="conv-hdr-status" id="conv-hdr-status">● Online now</div>
         </div>
       </div>
       <!-- Messages -->
-      <div class="msg-list"></div>
+      <div class="msg-list" id="conv-msg-list">
+        <!-- Dynamically rendered by renderConvScreen() -->
+      </div>
       <!-- Input -->
       <div class="conv-input-bar">
-        <input class="conv-input" type="text" placeholder="Message Angora Team…">
-        <button class="send-btn">
+        <input class="conv-input" id="conv-input" type="text" placeholder="Message Angora Team…" onkeypress="if(event.key==='Enter') window.sendPartnerMessage && window.sendPartnerMessage()">
+        <button class="send-btn" onclick="window.sendPartnerMessage && window.sendPartnerMessage()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
