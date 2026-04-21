@@ -1154,15 +1154,127 @@ async function partnerLoadAccountData() {
     const productIds = partnerData.products.map(p => p.id);
     const [invRes, salesRes] = await Promise.all([
       sb.from('angora_inventory').select('*').in('product_id', productIds),
-      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('date', new Date(Date.now() - 84*86400000).toISOString().slice(0,10)),
+      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('sale_date', new Date(Date.now() - 84*86400000).toISOString().slice(0,10)),
     ]);
     partnerData.inventory = invRes.data || [];
     partnerData.sales = salesRes.data || [];
   }
+  // Purchase Orders for this account
+  const { data: pos } = await sb.from('angora_purchase_orders').select('*').eq('account_id', accountId).order('expected_date', { ascending: true });
+  partnerData.purchaseOrders = pos || [];
   partnerData.ready = true;
   renderPartnerHome();
   renderPartnerInventory();
   renderPartnerFba();
+  renderPartnerOrders();
+  renderPartnerReports();
+}
+
+// ── PARTNER: PURCHASE ORDERS ──────────────────────────────────────────────
+function renderPartnerOrders() {
+  if (!partnerData.ready) return;
+  const subEl = document.getElementById('po-sub');
+  const kOpen = document.getElementById('po-k-open');
+  const kValue = document.getElementById('po-k-value');
+  const kUnits = document.getElementById('po-k-units');
+  const tl = document.getElementById('po-timeline');
+  if (!tl) return;
+  const pos = partnerData.purchaseOrders || [];
+  const productsById = {};
+  (partnerData.products || []).forEach(p => productsById[p.id] = p);
+  if (subEl) subEl.textContent = partnerData.account?.name || '';
+  // Only open POs (not received or cancelled) count for the KPIs
+  const openPos = pos.filter(p => !['received','cancelled'].includes(p.po_status));
+  const totalValue = openPos.reduce((a,p) => a + (parseFloat(p.total_cost)||0), 0);
+  const totalUnits = openPos.reduce((a,p) => a + (parseInt(p.quantity)||0), 0);
+  if (kOpen) kOpen.textContent = openPos.length;
+  if (kValue) kValue.textContent = '$' + totalValue.toLocaleString(undefined,{maximumFractionDigits:0});
+  if (kUnits) kUnits.textContent = totalUnits.toLocaleString();
+  if (pos.length === 0) {
+    tl.innerHTML = '<div style="padding:28px 22px;text-align:center;color:var(--muted);font-size:12px">No purchase orders on file yet.</div>';
+    return;
+  }
+  const statusCfg = {
+    pending:       { pill:'pm',  dot:'tlg', label:'Pending',       color:'var(--muted)' },
+    in_production: { pill:'pb',  dot:'tlb', label:'In Production', color:'var(--blue)' },
+    in_transit:    { pill:'po',  dot:'tlo', label:'In Transit',    color:'var(--orange)' },
+    received:      { pill:'pg',  dot:'tlg', label:'Received',      color:'var(--green)' },
+    cancelled:     { pill:'pm',  dot:'tlg', label:'Cancelled',     color:'var(--muted)' },
+  };
+  const today = new Date(); today.setHours(0,0,0,0);
+  tl.innerHTML = pos.map((po, i) => {
+    const cfg = statusCfg[po.po_status] || statusCfg.pending;
+    const prod = productsById[po.product_id];
+    const prodLabel = prod ? (prod.name || prod.sku || '') : '';
+    const units = po.quantity || 0;
+    const cost = parseFloat(po.total_cost) || 0;
+    const exp = po.expected_date ? new Date(po.expected_date + 'T12:00:00') : null;
+    const daysOut = exp ? Math.round((exp - today) / 86400000) : null;
+    const dateStr = exp ? exp.toLocaleDateString(undefined, { month:'short', day:'numeric' }) : '—';
+    const daysLabel = daysOut == null ? '' : (daysOut < 0 ? `${Math.abs(daysOut)} days late` : daysOut === 0 ? 'Today' : `${daysOut} days out`);
+    const costStr = cost > 0 ? `$${cost.toLocaleString(undefined,{maximumFractionDigits:0})}` : '';
+    const detailBits = [];
+    if (prodLabel) detailBits.push(`${prodLabel.replace(/</g,'&lt;')} \u00d7 ${units.toLocaleString()} units`);
+    if (costStr || po.notes) detailBits.push([costStr, (po.notes || '').replace(/</g,'&lt;').slice(0,120)].filter(Boolean).join('  |  '));
+    const showLine = i < pos.length - 1;
+    return `<div class="tli">
+      <div class="tleft"><div class="tldot ${cfg.dot}"></div>${showLine ? '<div class="tlline"></div>' : ''}</div>
+      <div class="tlcard">
+        <div class="tltop">
+          <div class="poid">${(po.po_number || po.id.slice(0,8)).replace(/</g,'&lt;')}</div>
+          <div><div class="podlbl">Expected</div><div class="podate" style="color:${cfg.color}">${dateStr}</div></div>
+        </div>
+        <div class="podet">${detailBits.join('<br>') || '<span style=\"color:var(--muted)\">No details</span>'}</div>
+        <div class="poft"><span class="pill ${cfg.pill}">${cfg.label}</span>${daysLabel ? `<span class="pods">${daysLabel}</span>` : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PARTNER: REPORTS / P&L ────────────────────────────────────────────────
+// NOTE: Angora takes a 5% service fee on net revenue. On the partner side
+// we silently deduct it from Net Profit but do NOT show it as a line item.
+function renderPartnerReports() {
+  if (!partnerData.ready) return;
+  const el = (id) => document.getElementById(id);
+  if (!el('rpt-profit')) return;
+  const products = partnerData.products || [];
+  const sales = partnerData.sales || [];
+  if (products.length === 0 || sales.length === 0) {
+    el('rpt-profit').textContent = '$0';
+    el('rpt-margin').textContent = '0% margin';
+    el('rpt-units').textContent = '0 units';
+    el('rpt-revenue').textContent = '$0';
+    el('rpt-fees').textContent = '$0';
+    el('rpt-ads').textContent = '$0';
+    return;
+  }
+  const byId = {}; products.forEach(p => byId[p.id] = p);
+  let units=0, rev=0, fba=0, referral=0, cogs=0, ads=0;
+  sales.forEach(s => {
+    const p = byId[s.product_id]; if (!p) return;
+    const u = s.units_sold || 0; const r = parseFloat(s.revenue) || 0;
+    const refPct = (p.referral_fee_pct || 15) / 100;
+    const fbaPer = parseFloat(p.fba_fee_manual || 0) || 0; // auto-calc skipped on partner side for simplicity
+    const cogsPer = parseFloat(p.cogs || 0);
+    units += u;
+    rev += r;
+    referral += r * refPct;
+    fba += u * fbaPer;
+    cogs += u * cogsPer;
+    ads += parseFloat(s.ad_spend || 0);
+  });
+  const angoraFee = rev * 0.05; // SILENT: not shown as line item
+  const netProfit = rev - fba - referral - cogs - ads - angoraFee;
+  const margin = rev > 0 ? (netProfit / rev * 100) : 0;
+  const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+  el('rpt-profit').textContent = fmt$(netProfit);
+  el('rpt-profit').style.color = netProfit >= 0 ? '' : 'var(--red)';
+  el('rpt-margin').textContent = `${margin.toFixed(1)}% margin`;
+  el('rpt-units').textContent = `${units.toLocaleString()} units`;
+  el('rpt-revenue').textContent = fmt$(rev);
+  el('rpt-fees').textContent = fmt$(fba + referral);
+  el('rpt-ads').textContent = fmt$(ads);
 }
 
 function pdSum(arr, key) { return arr.reduce((s, x) => s + (parseFloat(x[key]) || 0), 0); }
@@ -1395,6 +1507,12 @@ window.switchTab = function(tabOrScreen, opts) {
   const result = origSwitchTab(tabOrScreen, opts);
   if (tabOrScreen === 'messages' && partnerMsg.ready) {
     renderPartnerMessagesList();
+  }
+  if (tabOrScreen === 'orders' && partnerData.ready) {
+    renderPartnerOrders();
+  }
+  if (tabOrScreen === 'reports' && partnerData.ready) {
+    renderPartnerReports();
   }
   return result;
 };
