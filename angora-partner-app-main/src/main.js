@@ -1,5 +1,3 @@
-import { supabase } from './supabase.js';
-
 const SCREENS = {
   home: "home",
   reports: "reports",
@@ -367,45 +365,58 @@ function setAuthenticatedView(isAuthenticated) {
   }, 40);
 }
 
-async function loginWithGoogle() {
-  const btn = document.getElementById("google-signin-btn");
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "Redirecting…";
-  }
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin },
+function loginDemo(name) {
+  const partnerName = setPartnerName(name);
+
+  saveState({
+    authenticated: true,
+    partnerName,
+    screen: DEFAULT_SCREEN,
   });
-  if (error) {
-    console.error("Google sign-in error:", error.message);
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = `<svg class="google-icon" viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google`;
-    }
-  }
+
+  switchTab(DEFAULT_SCREEN, { persist: false });
+  setAuthenticatedView(true);
 }
 
-async function logoutUser() {
-  await supabase.auth.signOut();
-  saveState({ authenticated: false, partnerName: "", screen: DEFAULT_SCREEN });
+function logoutDemo() {
+  const partnerName = setPartnerName(
+    document.getElementById("partner-display-name")?.textContent,
+    { syncInput: true }
+  );
+
+  saveState({
+    authenticated: false,
+    partnerName,
+    screen: DEFAULT_SCREEN,
+  });
+
   switchTab(DEFAULT_SCREEN, { persist: false });
   setAuthenticatedView(false);
 }
 
 function bindAuthControls() {
-  const googleBtn = document.getElementById("google-signin-btn");
+  const loginForm = document.getElementById("demo-login-form");
+  const skipButton = document.getElementById("demo-skip-button");
   const signOutButton = document.getElementById("demo-signout");
+  const nameInputNode = document.getElementById("demo-name-input");
 
-  if (googleBtn) {
-    googleBtn.addEventListener("click", () => {
-      loginWithGoogle();
+  if (loginForm) {
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(loginForm);
+      loginDemo(formData.get("partnerName"));
+    });
+  }
+
+  if (skipButton) {
+    skipButton.addEventListener("click", () => {
+      loginDemo(nameInputNode?.value);
     });
   }
 
   if (signOutButton) {
     signOutButton.addEventListener("click", () => {
-      logoutUser();
+      logoutDemo();
     });
   }
 }
@@ -590,10 +601,6 @@ function switchTab(screenName, options = {}) {
   screenNode.classList.add("active");
   document.querySelector(".screen")?.scrollTo(0, 0);
 
-  if (targetScreen === "messages") {
-    loadConversationList();
-  }
-
   document.querySelectorAll(".ti").forEach((tab) => tab.classList.remove("active"));
   const activeTabId = TABS[targetScreen] ?? targetScreen;
   const tabNode = document.getElementById(`tab-${activeTabId}`);
@@ -606,10 +613,6 @@ function switchTab(screenName, options = {}) {
 
   if (targetScreen === "reports") {
     window.setTimeout(drawChart, 50);
-  }
-
-  if (targetScreen === "messages") {
-    window.setTimeout(loadConversationList, 50);
   }
 
   if (options.persist !== false) {
@@ -902,7 +905,7 @@ function chartLeave() {
   }
 }
 
-async function initializeApp() {
+function initializeApp() {
   const savedState = loadState();
   const startingRange =
     typeof savedState.range === "string" && RANGE_OPTIONS.includes(savedState.range)
@@ -917,6 +920,8 @@ async function initializeApp() {
       ? savedState.reportId
       : currentReportId;
   const savedPartnerName = typeof savedState.partnerName === "string" ? savedState.partnerName : "";
+  const isAuthenticated = savedState.authenticated === true;
+
   updateMotionPreference();
   if (typeof REDUCED_MOTION_QUERY.addEventListener === "function") {
     REDUCED_MOTION_QUERY.addEventListener("change", updateMotionPreference);
@@ -927,314 +932,471 @@ async function initializeApp() {
   refreshMotionTargets();
   bindMotionInteractions();
   bindAuthControls();
-  bindMessagingControls();
-  bindMessagingControls();
   setPartnerName(savedPartnerName, { syncInput: true });
   renderReport(startingReportId);
   setChartRange(startingRange, { persist: false });
   switchTab(startingScreen, { persist: false });
   updateStatusTime();
   window.setInterval(updateStatusTime, 30000);
-
-  // Check Supabase session (handles OAuth redirect callback automatically)
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    const name = session.user?.user_metadata?.full_name ||
-                 session.user?.user_metadata?.name ||
-                 session.user?.email?.split("@")[0] || "";
-    setPartnerName(name, { syncInput: true });
-    saveState({ authenticated: true, partnerName: name, screen: startingScreen });
-    setAuthenticatedView(true);
-  } else {
-    setAuthenticatedView(false);
-  }
-
-  // Keep session in sync across tabs
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (session) {
-      const name = session.user?.user_metadata?.full_name ||
-                   session.user?.user_metadata?.name ||
-                   session.user?.email?.split("@")[0] || "";
-      setPartnerName(name, { syncInput: true });
-      saveState({ authenticated: true, partnerName: name, screen: DEFAULT_SCREEN });
-      setAuthenticatedView(true);
-    } else {
-      setAuthenticatedView(false);
-    }
-  });
+  setAuthenticatedView(isAuthenticated);
 }
-
-// ─── MESSAGING ────────────────────────────────────────────────────────────────
-let currentConversationId = null;
-let currentConversationIsTeam = false;
-let messagesChannel = null;
-let conversationsChannel = null;
-
-function isAngoraTeamEmail(email) {
-  return typeof email === "string" && email.toLowerCase().endsWith("@joinangora.com");
-}
-
-function msgFormatTime(iso) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now - d) / 86400000);
-  if (diff === 0) return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  if (diff === 1) return "Yesterday";
-  if (diff < 7) return d.toLocaleDateString([], { weekday: "short" });
-  return d.toLocaleDateString([], { month: "short", day: "numeric" });
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function getInitials(name) {
-  return (name || "A")
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
-async function ensureConversation(user) {
-  const { data } = await supabase
-    .from("conversations")
-    .select("*")
-    .eq("partner_id", user.id)
-    .maybeSingle();
-  if (data) return data;
-  const { data: newConv } = await supabase
-    .from("conversations")
-    .insert({
-      partner_id: user.id,
-      partner_name:
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.email?.split("@")[0] ||
-        "Partner",
-      partner_email: user.email || "",
-    })
-    .select()
-    .single();
-  return newConv;
-}
-
-async function loadConversationList() {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const isTeam = isAngoraTeamEmail(session.user.email);
-
-  if (!isTeam) {
-    const conv = await ensureConversation(session.user);
-    if (conv) renderConversationList([conv], false);
-  } else {
-    const { data } = await supabase
-      .from("conversations")
-      .select("*")
-      .order("last_message_at", { ascending: false });
-    renderConversationList(data || [], true);
-  }
-
-  if (conversationsChannel) supabase.removeChannel(conversationsChannel);
-  conversationsChannel = supabase
-    .channel("conv-list-" + Date.now())
-    .on("postgres_changes", { event: "*", schema: "public", table: "conversations" }, () => {
-      loadConversationList();
-    })
-    .subscribe();
-}
-
-function renderConversationList(conversations, isTeam) {
-  const clist = document.querySelector(".clist");
-  if (!clist) return;
-
-  if (conversations.length === 0) {
-    clist.innerHTML = `<div style="padding:32px 22px;text-align:center;color:var(--muted);font-size:12px">${
-      isTeam ? "No partner messages yet" : "Tap New Message to start chatting"
-    }</div>`;
-    return;
-  }
-
-  clist.innerHTML = conversations
-    .map((conv) => {
-      const name = isTeam ? conv.partner_name || "Partner" : "Angora Team";
-      const initials = isTeam ? getInitials(conv.partner_name) : "AT";
-      const preview = conv.last_message
-        ? escapeHtml(conv.last_message.slice(0, 42)) +
-          (conv.last_message.length > 42 ? "…" : "")
-        : "Start a conversation";
-      const time = conv.last_message_at ? msgFormatTime(conv.last_message_at) : "";
-      const unread = isTeam && conv.has_unread;
-      return `<div class="crow${unread ? " unread" : ""}" data-conv-id="${conv.id}" data-partner-name="${escapeHtml(conv.partner_name || "Partner")}">
-        <div class="cav" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">${initials}${unread ? '<div class="conl"></div>' : ""}</div>
-        <div class="cbody"><div class="cname">${escapeHtml(name)}</div><div class="cprev">${preview}</div></div>
-        <div class="cmeta"><div class="ctime">${time}</div>${unread ? '<div class="ubadge">●</div>' : ""}</div>
-      </div>`;
-    })
-    .join("");
-
-  clist.querySelectorAll(".crow").forEach((row) => {
-    row.addEventListener("click", () => {
-      openConversationById(row.dataset.convId, row.dataset.partnerName, isTeam);
-    });
-  });
-
-  refreshMotionTargets(document.getElementById("screen-messages"));
-}
-
-async function openConversationById(convId, partnerName, isTeam) {
-  currentConversationId = convId;
-  currentConversationIsTeam = isTeam;
-
-  const headerName = document.querySelector(".conv-hdr-name");
-  if (headerName) headerName.textContent = isTeam ? partnerName : "Angora Team";
-
-  if (isTeam) {
-    await supabase.from("conversations").update({ has_unread: false }).eq("id", convId);
-  }
-
-  await loadMessagesForConversation(convId, isTeam);
-  switchTab("conv");
-}
-
-async function loadMessagesForConversation(convId, isTeam) {
-  const { data } = await supabase
-    .from("messages")
-    .select("*")
-    .eq("conversation_id", convId)
-    .order("created_at", { ascending: true });
-
-  renderMessageList(data || [], isTeam);
-
-  if (messagesChannel) supabase.removeChannel(messagesChannel);
-  messagesChannel = supabase
-    .channel("msgs-" + convId)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `conversation_id=eq.${convId}`,
-      },
-      (payload) => {
-        appendMessageBubble(payload.new, isTeam);
-      }
-    )
-    .subscribe();
-}
-
-function buildBubbleHTML(msg, isTeam) {
-  const isMe = isTeam ? msg.is_from_team : !msg.is_from_team;
-  const initials = getInitials(msg.sender_name);
-  const bg = msg.is_from_team
-    ? "background:linear-gradient(135deg,#6b4fcc,#0A0A0A)"
-    : "background:linear-gradient(135deg,#2563eb,#767C89)";
-  return `<div class="msg-row${isMe ? " me" : ""}">
-    <div class="msg-av" style="${bg}">${initials}</div>
-    <div class="bubble${isMe ? " me" : " them"}">${escapeHtml(msg.body)}</div>
-  </div>`;
-}
-
-function renderMessageList(messages, isTeam) {
-  const list = document.querySelector(".msg-list");
-  if (!list) return;
-  if (messages.length === 0) {
-    list.innerHTML = `<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px 0;color:var(--muted);font-size:12px">Send a message to get the conversation started</div>`;
-    return;
-  }
-  list.innerHTML = messages.map((m) => buildBubbleHTML(m, isTeam)).join("");
-  list.scrollTop = list.scrollHeight;
-}
-
-function appendMessageBubble(msg, isTeam) {
-  const list = document.querySelector(".msg-list");
-  if (!list) return;
-  const empty = list.querySelector('[style*="Send a message"]');
-  if (empty) empty.remove();
-  list.insertAdjacentHTML("beforeend", buildBubbleHTML(msg, isTeam));
-  list.scrollTop = list.scrollHeight;
-}
-
-async function sendChatMessage() {
-  const input = document.querySelector(".conv-input");
-  if (!input || !currentConversationId) return;
-  const body = input.value.trim();
-  if (!body) return;
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const user = session.user;
-  const isTeam = isAngoraTeamEmail(user.email);
-  const senderName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email?.split("@")[0] ||
-    "User";
-
-  input.value = "";
-  input.focus();
-
-  await supabase.from("messages").insert({
-    conversation_id: currentConversationId,
-    sender_id: user.id,
-    sender_name: senderName,
-    is_from_team: isTeam,
-    body,
-  });
-
-  await supabase
-    .from("conversations")
-    .update({
-      last_message: body,
-      last_message_at: new Date().toISOString(),
-      has_unread: !isTeam,
-    })
-    .eq("id", currentConversationId);
-}
-
-function bindMessagingControls() {
-  const sendBtn = document.querySelector(".send-btn");
-  const input = document.querySelector(".conv-input");
-  const nmb = document.querySelector(".nmb");
-
-  if (sendBtn) sendBtn.addEventListener("click", sendChatMessage);
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendChatMessage();
-      }
-    });
-  }
-  if (nmb) {
-    nmb.addEventListener("click", async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session || isAngoraTeamEmail(session.user.email)) return;
-      const conv = await ensureConversation(session.user);
-      if (conv) openConversationById(conv.id, conv.partner_name, false);
-    });
-  }
-}
-// ─── END MESSAGING ────────────────────────────────────────────────────────────
 
 window.switchTab = switchTab;
 window.openReport = openReport;
 window.setChartRange = setChartRange;
 window.chartHover = chartHover;
 window.chartLeave = chartLeave;
+
+// ══════════════════════════════════════════════════════════════════════════
+// SUPABASE-BACKED MESSAGING (partner side)
+// ══════════════════════════════════════════════════════════════════════════
+const partnerMsg = {
+  threads: [],
+  activeThreadId: null,
+  msgChannel: null,
+  inboxChannel: null,
+  accountsById: {},
+  ready: false,
+};
+
+function partnerSupabase() { return window.angoraSupabase || null; }
+
+async function ensurePartnerSupabaseReady() {
+  // Wait up to 3s for the library to load
+  for (let i = 0; i < 30; i++) {
+    if (partnerSupabase()) return partnerSupabase();
+    await new Promise(r => setTimeout(r, 100));
+  }
+  return null;
+}
+
+async function partnerCheckSession() {
+  const sb = await ensurePartnerSupabaseReady();
+  if (!sb) return null;
+  const { data: { session } } = await sb.auth.getSession();
+  return session;
+}
+
+async function partnerLoadThreads() {
+  const sb = partnerSupabase(); if (!sb) return;
+  const { data: accessRows } = await sb.from('angora_partner_access').select('account_id, role');
+  const accountIds = (accessRows || []).map(r => r.account_id);
+  if (accountIds.length === 0) {
+    partnerMsg.threads = [];
+    partnerMsg.ready = true;
+    return;
+  }
+  const { data: accounts } = await sb.from('angora_accounts').select('id, name').in('id', accountIds);
+  const byId = {}; (accounts || []).forEach(a => { byId[a.id] = a; });
+  partnerMsg.accountsById = byId;
+
+  const { data: threads } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
+  const lastMsgs = await Promise.all((threads || []).map(t =>
+    sb.from('angora_messages').select('content, sender_type, created_at').eq('thread_id', t.id).order('created_at', { ascending: false }).limit(1).then(r => r.data && r.data[0])
+  ));
+  partnerMsg.threads = (threads || []).map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
+  partnerMsg.ready = true;
+
+  // Global realtime for inbox list updates
+  try {
+    if (partnerMsg.inboxChannel) { sb.removeChannel(partnerMsg.inboxChannel); }
+    partnerMsg.inboxChannel = sb.channel('partner-inbox-global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'angora_messages' }, (payload) => {
+      const m = payload.new;
+      const t = partnerMsg.threads.find(x => x.id === m.thread_id);
+      if (!t) return;
+      t.lastMsg = { content: m.content, sender_type: m.sender_type, created_at: m.created_at };
+      t.updated_at = m.created_at;
+      partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+      renderPartnerMessagesList();
+      if (partnerMsg.activeThreadId === m.thread_id) partnerConvAppend(m);
+    }).subscribe();
+  } catch(e) { console.warn('partner inbox subscribe err', e); }
+}
+
+function timeShort(ts) {
+  const d = new Date(ts); const now = new Date();
+  if (d.toDateString() === now.toDateString()) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const diff = (now - d) / 86400000;
+  if (diff < 7) return d.toLocaleDateString([], { weekday: 'short' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function initials(name) { return (name || '?').split(/\s+/).slice(0,2).map(s => s[0]).join('').toUpperCase(); }
+
+function renderPartnerMessagesList() {
+  const list = document.getElementById('messages-conv-list');
+  const sub = document.getElementById('messages-subtitle');
+  if (!list) return;
+  if (!partnerMsg.ready) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">Loading\u2026</div>';
+    return;
+  }
+  if (partnerMsg.threads.length === 0) {
+    list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6">No conversations yet.<br><br>Your Angora team will start messaging you here.</div>';
+    if (sub) sub.textContent = 'Your Angora team';
+    return;
+  }
+  if (sub) sub.textContent = `${partnerMsg.threads.length} conversation${partnerMsg.threads.length === 1 ? '' : 's'}`;
+  list.innerHTML = partnerMsg.threads.map(t => {
+    const last = t.lastMsg;
+    const preview = last ? (last.content || '').slice(0, 60) : '(no messages yet)';
+    const time = last ? timeShort(last.created_at) : '';
+    const isUnread = last && last.sender_type === 'garden';
+    const ini = initials(t.account?.name || 'A');
+    const escaped = preview.replace(/</g,'&lt;');
+    const nm = (t.account?.name || 'Angora').replace(/</g,'&lt;');
+    return `<div class="crow ${isUnread ? 'unread' : ''}" data-thread-id="${t.id}">
+      <div class="cav" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">${ini}${isUnread ? '<div class="conl"></div>' : ''}</div>
+      <div class="cbody"><div class="cname">${nm}</div><div class="cprev">${escaped}</div></div>
+      <div class="cmeta"><div class="ctime">${time}</div>${isUnread ? '<div class="ubadge">\u2022</div>' : ''}</div>
+    </div>`;
+  }).join('');
+  // Click binding
+  list.querySelectorAll('[data-thread-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      partnerOpenConv(el.getAttribute('data-thread-id'));
+    });
+  });
+}
+
+async function partnerOpenConv(threadId) {
+  partnerMsg.activeThreadId = threadId;
+  const t = partnerMsg.threads.find(x => x.id === threadId);
+  const hdrName = document.getElementById('conv-hdr-name');
+  const hdrAv = document.getElementById('conv-hdr-av');
+  const hdrStatus = document.getElementById('conv-hdr-status');
+  const input = document.getElementById('conv-input');
+  if (t) {
+    if (hdrName) hdrName.textContent = `Angora \u00b7 ${t.account?.name || 'Team'}`;
+    if (hdrAv) hdrAv.firstChild && (hdrAv.firstChild.textContent = initials(t.account?.name || 'A'));
+    if (hdrStatus) hdrStatus.textContent = '\u25cf Secure channel';
+    if (input) input.placeholder = `Message your Angora team\u2026`;
+  }
+  switchTab('conv');
+
+  // Load messages
+  const sb = partnerSupabase();
+  if (!sb) return;
+  const { data: msgs } = await sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
+  const list = document.getElementById('conv-msg-list');
+  if (list) {
+    list.innerHTML = (msgs || []).map(partnerBubbleHtml).join('');
+    list.scrollTop = list.scrollHeight;
+  }
+
+  // Subscribe realtime for this thread
+  try {
+    if (partnerMsg.msgChannel) { await sb.removeChannel(partnerMsg.msgChannel); }
+    partnerMsg.msgChannel = sb.channel(`partner-conv-${threadId}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'angora_messages', filter: `thread_id=eq.${threadId}` }, (payload) => {
+      partnerConvAppend(payload.new);
+    }).subscribe();
+  } catch(e) { console.warn('conv subscribe err', e); }
+}
+
+function partnerBubbleHtml(m) {
+  const me = m.sender_type === 'partner';
+  const ini = me ? 'ME' : 'AN';
+  const bg = me ? 'linear-gradient(135deg,#2563eb,#767C89)' : 'linear-gradient(135deg,#6b4fcc,#0A0A0A)';
+  const txt = (m.content || '').replace(/</g,'&lt;');
+  return `<div class="msg-row ${me ? 'me' : ''}">
+    <div class="msg-av" style="background:${bg}">${ini}</div>
+    <div class="bubble ${me ? 'me' : 'them'}">${txt}</div>
+  </div>`;
+}
+
+function partnerConvAppend(m) {
+  const list = document.getElementById('conv-msg-list');
+  if (!list) return;
+  const div = document.createElement('div');
+  div.innerHTML = partnerBubbleHtml(m);
+  list.appendChild(div.firstChild);
+  list.scrollTop = list.scrollHeight;
+}
+
+window.sendPartnerMessage = async function() {
+  const input = document.getElementById('conv-input');
+  if (!input) return;
+  const content = (input.value || '').trim();
+  if (!content) return;
+  const threadId = partnerMsg.activeThreadId; if (!threadId) return;
+  const sb = partnerSupabase(); if (!sb) return;
+  const { data: userRes } = await sb.auth.getUser();
+  const userId = userRes && userRes.user ? userRes.user.id : null;
+  const { error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content });
+  if (error) return alert('Send failed: ' + error.message);
+  input.value = '';
+};
+
+// ─── Partner data wiring (Home / Inventory / FBA) ──────────────────────────
+const partnerData = {
+  accountId: null,
+  account: null,
+  products: [],
+  inventory: [],
+  sales: [],
+  ready: false,
+};
+
+async function partnerLoadAccountData() {
+  const sb = partnerSupabase(); if (!sb) return;
+  // Figure out which accounts the partner has access to
+  const { data: access } = await sb.from('angora_partner_access').select('account_id').limit(5);
+  const accountIds = (access || []).map(r => r.account_id);
+  if (accountIds.length === 0) { partnerData.ready = true; return; }
+  // Pick the first account for now (multi-account can come later)
+  const accountId = accountIds[0];
+  partnerData.accountId = accountId;
+  const { data: account } = await sb.from('angora_accounts').select('id, name, status').eq('id', accountId).single();
+  partnerData.account = account;
+  const { data: products } = await sb.from('angora_products').select('*').eq('account_id', accountId);
+  partnerData.products = products || [];
+  if (partnerData.products.length) {
+    const productIds = partnerData.products.map(p => p.id);
+    const [invRes, salesRes] = await Promise.all([
+      sb.from('angora_inventory').select('*').in('product_id', productIds),
+      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('date', new Date(Date.now() - 84*86400000).toISOString().slice(0,10)),
+    ]);
+    partnerData.inventory = invRes.data || [];
+    partnerData.sales = salesRes.data || [];
+  }
+  partnerData.ready = true;
+  renderPartnerHome();
+  renderPartnerInventory();
+  renderPartnerFba();
+}
+
+function pdSum(arr, key) { return arr.reduce((s, x) => s + (parseFloat(x[key]) || 0), 0); }
+
+function partnerRunwayDays() {
+  // Avg units/day over last 28 days
+  const cutoff = Date.now() - 28*86400000;
+  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const totalUnits = pdSum(recent, 'units_sold');
+  const avgPerDay = totalUnits / 28;
+  if (avgPerDay <= 0) return null;
+  const totalInv = pdSum(partnerData.inventory, 'quantity');
+  return Math.round(totalInv / avgPerDay);
+}
+
+function partnerWeeklyProfit() {
+  // Last 7 days: revenue - ads - other_fees - (units * cogs) - (units * fba_fee)
+  const cutoff = Date.now() - 7*86400000;
+  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const prodById = {}; partnerData.products.forEach(p => { prodById[p.id] = p; });
+  let profit = 0;
+  recent.forEach(s => {
+    const p = prodById[s.product_id]; if (!p) return;
+    const u = s.units_sold || 0;
+    const r = parseFloat(s.revenue) || 0;
+    const fba = u * (parseFloat(p.fba_fee_manual) || 0);
+    const referral = r * ((parseFloat(p.referral_fee_pct) || 15) / 100);
+    const cogs = u * (parseFloat(p.cogs) || 0);
+    const other = parseFloat(s.other_fees) || 0;
+    const ads = parseFloat(s.ad_spend) || 0;
+    profit += r - fba - referral - cogs - other - ads;
+  });
+  return profit;
+}
+
+function renderPartnerHome() {
+  const brand = document.getElementById('home-brand');
+  if (brand && partnerData.account) brand.textContent = partnerData.account.name;
+  const fba = document.getElementById('home-kpi-fba');
+  if (fba) {
+    const fbaUnits = partnerData.inventory.filter(i => i.location === 'fba').reduce((s,i) => s + (i.quantity||0), 0);
+    fba.textContent = fbaUnits.toLocaleString();
+  }
+  const profit = document.getElementById('home-kpi-profit');
+  if (profit) {
+    const p = partnerWeeklyProfit();
+    profit.textContent = '$' + Math.round(p).toLocaleString();
+  }
+  const pos = document.getElementById('home-kpi-pos');
+  if (pos) pos.textContent = '0'; // PO tracking not yet in schema
+  const updated = document.getElementById('home-updated');
+  if (updated) updated.textContent = 'Live  |  Updated ' + new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+}
+
+function renderPartnerInventory() {
+  if (!partnerData.ready) return;
+  const psub = document.getElementById('inv-psub');
+  if (psub && partnerData.account) psub.textContent = partnerData.account.name + '  |  Warehouse + FBA';
+  const invByLoc = { angora: 0, fba: 0, awd: 0, other: 0 };
+  partnerData.inventory.forEach(i => { invByLoc[i.location] = (invByLoc[i.location]||0) + (i.quantity||0); });
+  const total = invByLoc.angora + invByLoc.fba + invByLoc.awd + invByLoc.other;
+  const wh = document.getElementById('inv-k-warehouse');
+  if (wh) wh.textContent = (invByLoc.angora + invByLoc.awd).toLocaleString();
+  const fbaEl = document.getElementById('inv-k-fba');
+  if (fbaEl) fbaEl.textContent = invByLoc.fba.toLocaleString();
+  const totalEl = document.getElementById('inv-k-total');
+  if (totalEl) totalEl.textContent = total.toLocaleString();
+  const runway = document.getElementById('inv-k-runway');
+  if (runway) {
+    const r = partnerRunwayDays();
+    runway.textContent = r !== null ? r + ' days' : '—';
+  }
+  // Per-SKU breakdown
+  const list = document.getElementById('inv-sku-list');
+  if (!list) return;
+  const byProd = {};
+  partnerData.inventory.forEach(i => {
+    const k = i.product_id;
+    if (!byProd[k]) byProd[k] = { angora: 0, fba: 0, other: 0 };
+    if (i.location === 'angora' || i.location === 'awd') byProd[k].angora += i.quantity||0;
+    else if (i.location === 'fba') byProd[k].fba += i.quantity||0;
+    else byProd[k].other += i.quantity||0;
+  });
+  if (Object.keys(byProd).length === 0) {
+    list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--muted);font-size:11px">No inventory data yet.</div>';
+    return;
+  }
+  list.innerHTML = partnerData.products.map(p => {
+    const inv = byProd[p.id] || { angora: 0, fba: 0, other: 0 };
+    const total = inv.angora + inv.fba + inv.other;
+    if (total === 0) return '';
+    // Velocity = avg units/wk
+    const sales = partnerData.sales.filter(s => s.product_id === p.id);
+    const recent = sales.filter(s => (Date.now() - new Date(s.date).getTime()) < 84*86400000);
+    const unitsPerWk = pdSum(recent, 'units_sold') / 12;
+    const weeksLeft = unitsPerWk > 0 ? total / unitsPerWk : 99;
+    let label = 'Healthy', colorVar = 'var(--green)', pillClass = 'pg', pct = 100;
+    if (weeksLeft < 2) { label = 'Critical'; colorVar = 'var(--red)'; pillClass = 'po'; pct = 20; }
+    else if (weeksLeft < 4) { label = 'Low Stock'; colorVar = 'var(--orange)'; pillClass = 'po'; pct = 50; }
+    else if (weeksLeft < 8) { label = 'Healthy'; colorVar = 'var(--green)'; pillClass = 'pg'; pct = 75; }
+    else { label = 'Overstock'; colorVar = 'var(--blue)'; pillClass = 'pb'; pct = 100; }
+    const nm = (p.name || p.sku || 'Product').replace(/</g,'&lt;');
+    return `<div class="skuinv">
+      <div class="sit">
+        <div class="sil"><div class="sdot" style="background:${colorVar};margin-top:5px"></div>
+          <div><div class="sin">${nm}</div><div class="siloc">Warehouse: ${inv.angora}  |  FBA: ${inv.fba}</div></div>
+        </div>
+        <div><div class="sic" style="color:${colorVar}">${total.toLocaleString()}</div><span class="pill ${pillClass}">${label}</span></div>
+      </div>
+      <div class="prow"><span>${Math.round(weeksLeft)} weeks at current rate</span><span style="color:${colorVar}">${pct}%</span></div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%;background:${colorVar}"></div></div>
+    </div>`;
+  }).filter(Boolean).join('');
+}
+
+function renderPartnerFba() {
+  if (!partnerData.ready) return;
+  const fbaTotal = partnerData.inventory.filter(i => i.location === 'fba').reduce((s,i) => s + (i.quantity||0), 0);
+  const totalEl = document.getElementById('fba-k-total');
+  if (totalEl) totalEl.textContent = fbaTotal.toLocaleString();
+  // ACoS = ad_spend / revenue over last 28d
+  const cutoff = Date.now() - 28*86400000;
+  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const rev = pdSum(recent, 'revenue');
+  const ads = pdSum(recent, 'ad_spend');
+  const acos = rev > 0 ? (ads/rev*100) : 0;
+  const acosEl = document.getElementById('fba-k-acos');
+  if (acosEl) acosEl.textContent = acos.toFixed(1) + '%';
+  // Days of stock (FBA only) = fba_units / avg_units_per_day
+  const unitsPerDay = pdSum(recent, 'units_sold') / 28;
+  const dos = unitsPerDay > 0 ? Math.round(fbaTotal / unitsPerDay) : null;
+  const dosEl = document.getElementById('fba-k-dos');
+  if (dosEl) dosEl.textContent = dos !== null ? dos + ' days' : '—';
+
+  // Per-SKU FBA rows
+  const list = document.getElementById('fba-sku-list');
+  if (!list) return;
+  const byProd = {};
+  partnerData.inventory.filter(i => i.location === 'fba').forEach(i => { byProd[i.product_id] = (byProd[i.product_id]||0) + (i.quantity||0); });
+  list.innerHTML = partnerData.products.map(p => {
+    const q = byProd[p.id] || 0;
+    if (q === 0) return '';
+    const nm = (p.name || p.sku || 'Product').replace(/</g,'&lt;');
+    // per-sku velocity
+    const sales = partnerData.sales.filter(s => s.product_id === p.id && (Date.now() - new Date(s.date).getTime()) < 28*86400000);
+    const uPerWk = pdSum(sales, 'units_sold') / 4;
+    const daysLeft = uPerWk > 0 ? Math.round(q / (uPerWk / 7)) : null;
+    const label = daysLeft === null ? 'No data' : (daysLeft < 14 ? 'Low' : (daysLeft < 28 ? 'Watch' : 'Healthy'));
+    const color = daysLeft === null ? 'var(--muted)' : (daysLeft < 14 ? 'var(--orange)' : (daysLeft < 28 ? 'var(--blue)' : 'var(--green)'));
+    const pillCls = label === 'Low' ? 'po' : (label === 'Watch' ? 'pb' : 'pg');
+    return `<div class="fcard">
+      <div class="ftop">
+        <div class="fleft">
+          <div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+          <div><div class="fn">${nm}</div><div class="floc">${q} units  |  FBA</div></div>
+        </div>
+        <div><div class="fcount" style="color:${color}">${q}</div><span class="pill ${pillCls}" style="float:right;margin-top:4px">${label}</span></div>
+      </div>
+      <div class="fmet">
+        <div><div class="fml">Sell-through/wk</div><div class="fmv">~${Math.round(uPerWk)} units</div></div>
+        <div><div class="fml">Days of stock</div><div class="fmv" style="color:${color}">${daysLeft !== null ? '~' + daysLeft + ' days' : '—'}</div></div>
+        <div><div class="fml">Unit price</div><div class="fmv">$${(p.price||0).toFixed(2)}</div></div>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+  if (!list.innerHTML.trim()) {
+    list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--muted);font-size:11px">No FBA inventory data yet.</div>';
+  }
+}
+
+async function partnerRealLogin(session) {
+  // Save minimal state & show authenticated view
+  saveState({ authenticated: true, partnerName: (session?.user?.email || 'Partner').split('@')[0], screen: DEFAULT_SCREEN });
+  setPartnerName((session?.user?.email || 'Partner').split('@')[0]);
+  setAuthenticatedView(true);
+  await Promise.all([
+    partnerLoadThreads(),
+    partnerLoadAccountData(),
+  ]);
+  renderPartnerMessagesList();
+}
+
+function bindRealAuth() {
+  const form = document.getElementById('real-login-form');
+  if (!form) return;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const emailEl = document.getElementById('real-login-email');
+    const msgEl = document.getElementById('real-login-msg');
+    const email = (emailEl?.value || '').trim();
+    if (!email) return;
+    const sb = await ensurePartnerSupabaseReady();
+    if (!sb) { if (msgEl) msgEl.textContent = 'Auth service not available.'; return; }
+    if (msgEl) msgEl.textContent = 'Sending magic link\u2026';
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if (error) { if (msgEl) { msgEl.textContent = 'Error: ' + error.message; msgEl.style.color = '#dc2626'; } return; }
+    if (msgEl) { msgEl.textContent = '\u2713 Check your inbox for the sign-in link.'; msgEl.style.color = '#059669'; }
+  });
+}
+
+// Bootstrap real auth after initial app init
+(async function bootPartnerAuth() {
+  // Wait a tick for initializeApp's DOMContentLoaded + motion init
+  await new Promise(r => setTimeout(r, 250));
+  bindRealAuth();
+  const session = await partnerCheckSession();
+  if (session) {
+    await partnerRealLogin(session);
+  } else {
+    // Still prime the messages subtitle etc for demo mode
+    renderPartnerMessagesList();
+  }
+  // React to auth state changes (e.g. after magic link)
+  const sb = partnerSupabase();
+  if (sb) {
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        await partnerRealLogin(session);
+      }
+    });
+  }
+})();
+
+// When user switches to messages tab, refresh
+const origSwitchTab = switchTab;
+window.switchTab = function(tabOrScreen, opts) {
+  const result = origSwitchTab(tabOrScreen, opts);
+  if (tabOrScreen === 'messages' && partnerMsg.ready) {
+    renderPartnerMessagesList();
+  }
+  return result;
+};
 
 initializeApp();
