@@ -978,12 +978,22 @@ async function partnerCheckSession() {
 }
 
 async function partnerLoadThreads() {
-  const sb = partnerSupabase(); if (!sb) return;
-  const { data: accessRows } = await sb.from('angora_partner_access').select('account_id, role');
-  const accountIds = (accessRows || []).map(r => r.account_id);
+  const sb = partnerSupabase(); if (!sb) { partnerMsg.ready = true; renderPartnerMessagesList(); return; }
+  // Resolve accounts via BOTH partner_access grants AND contact_email match
+  const { data: userRes } = await sb.auth.getUser();
+  const myEmail = (userRes?.user?.email || '').toLowerCase();
+  const [{ data: accessRows }, { data: ownedAccounts }] = await Promise.all([
+    sb.from('angora_partner_access').select('account_id, role'),
+    myEmail ? sb.from('angora_accounts').select('id').ilike('contact_email', myEmail) : Promise.resolve({ data: [] }),
+  ]);
+  const idSet = new Set();
+  (accessRows || []).forEach(r => idSet.add(r.account_id));
+  (ownedAccounts || []).forEach(r => idSet.add(r.id));
+  const accountIds = [...idSet];
   if (accountIds.length === 0) {
     partnerMsg.threads = [];
     partnerMsg.ready = true;
+    renderPartnerMessagesList();
     return;
   }
   const { data: accounts } = await sb.from('angora_accounts').select('id, name').in('id', accountIds);
@@ -1112,6 +1122,45 @@ function partnerConvAppend(m) {
   list.appendChild(div.firstChild);
   list.scrollTop = list.scrollHeight;
 }
+
+// Start or resume the conversation between this partner and their PSM/team.
+// If a thread already exists for the partner's account we reuse it; otherwise
+// we create a new one. Then we hop into the conv screen.
+window.partnerStartNewMessage = async function() {
+  const sb = partnerSupabase(); if (!sb) return;
+  // Make sure we have loaded threads + account context
+  if (!partnerMsg.ready) {
+    try { await partnerLoadThreads(); } catch(e) { console.warn(e); }
+  }
+  if (!partnerData.ready) {
+    try { await partnerLoadAccountData(); } catch(e) { console.warn(e); }
+  }
+  // Reuse the most recent thread if we already have one
+  if (partnerMsg.threads.length > 0) {
+    return partnerOpenConv(partnerMsg.threads[0].id);
+  }
+  // Figure out which account to create a thread against
+  const accountId = partnerData.accountId || (partnerMsg.threads[0] && partnerMsg.threads[0].account_id);
+  if (!accountId) {
+    alert('Your account hasn\u2019t been set up yet. Please ask your PSM to add your email in the Angora dashboard.');
+    return;
+  }
+  // Create a thread
+  const { data: userRes } = await sb.auth.getUser();
+  const userId = userRes && userRes.user ? userRes.user.id : null;
+  const { data: newThread, error: tErr } = await sb.from('angora_message_threads').insert({
+    account_id: accountId,
+    subject: 'Partner conversation',
+    created_by: userId,
+  }).select('id, account_id, subject, updated_at').single();
+  if (tErr) { alert('Could not start a conversation: ' + tErr.message); return; }
+  // Insert into local state so renderers find it
+  const acct = partnerMsg.accountsById[accountId] || partnerData.account || { id: accountId, name: partnerData.account?.name || 'Your account' };
+  partnerMsg.accountsById[accountId] = acct;
+  partnerMsg.threads.unshift({ ...newThread, lastMsg: null, account: acct });
+  renderPartnerMessagesList();
+  await partnerOpenConv(newThread.id);
+};
 
 window.sendPartnerMessage = async function() {
   const input = document.getElementById('conv-input');
