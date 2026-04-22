@@ -501,7 +501,7 @@
     <!-- ══════ MESSAGES ══════ -->
     <div class="ts" id="screen-messages">
       <div class="mhdr"><div class="mtitle">Messages</div><div class="msub" id="messages-subtitle">Your Angora team</div></div>
-      <div class="nmb"><div class="nmico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="nmlbl">New Message</div><div class="nmsub">Start a conversation with your team</div></div></div>
+      <div class="nmb" onclick="window.partnerStartNewMessage && window.partnerStartNewMessage()" style="cursor:pointer"><div class="nmico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="nmlbl">New Message</div><div class="nmsub">Start a conversation with your team</div></div></div>
       <div class="slbl">Conversations</div>
       <div class="clist" id="messages-conv-list">
         <!-- Conversations render here. Populated by renderMessagesScreen() -->
