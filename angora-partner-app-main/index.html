@@ -14,7 +14,10 @@
   <script>
     // Initialize Supabase client (same project as Garden)
     window.ANGORA_SUPABASE_URL = "https://temzkjhkqnrtdwxckioy.supabase.co";
-    window.ANGORA_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsImtpZCI6IkxjUlIzM1JLMXpsWm9BS0QiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbXpramhrcW5ydGR3eGNraW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA4MjMsImV4cCI6MjA3NTUzNjgyM30.6ReTVPQ1l6JG97TL-o4hdl8Z7r9uiLoNH4cEMWD-m8M";
+    // Must match the Garden's publishable key (js/auth.js). The previous
+    // hardcoded JWT anon key had been rotated in Supabase, causing every
+    // REST/auth call to fail with "Invalid API key".
+    window.ANGORA_SUPABASE_ANON_KEY = "sb_publishable_kTc_bhsr0iiPmVV34aSdWg_5gfC5hR8";
     window.addEventListener("DOMContentLoaded", () => {
       if (window.supabase) {
         window.angoraSupabase = window.supabase.createClient(window.ANGORA_SUPABASE_URL, window.ANGORA_SUPABASE_ANON_KEY);
