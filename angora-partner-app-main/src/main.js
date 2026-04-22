@@ -959,6 +959,13 @@ const partnerMsg = {
   ready: false,
 };
 
+// Angora internal admins. These emails skip the signup gate and can impersonate
+// any partner account via the account switcher at the top of the partner app.
+const PARTNER_ADMIN_EMAILS = ['ben@joinangora.com','alex@joinangora.com'];
+function isAdminEmail(email) {
+  return !!email && PARTNER_ADMIN_EMAILS.includes(String(email).toLowerCase());
+}
+
 function partnerSupabase() { return window.angoraSupabase || null; }
 
 async function ensurePartnerSupabaseReady() {
@@ -979,17 +986,28 @@ async function partnerCheckSession() {
 
 async function partnerLoadThreads() {
   const sb = partnerSupabase(); if (!sb) { partnerMsg.ready = true; renderPartnerMessagesList(); return; }
-  // Resolve accounts via BOTH partner_access grants AND contact_email match
+  // Scope: if we already picked a specific account (e.g. admin chose one from
+  // the switcher), scope threads to JUST that account. Otherwise resolve via
+  // partner_access grants + contact_email match.
   const { data: userRes } = await sb.auth.getUser();
   const myEmail = (userRes?.user?.email || '').toLowerCase();
-  const [{ data: accessRows }, { data: ownedAccounts }] = await Promise.all([
-    sb.from('angora_partner_access').select('account_id, role'),
-    myEmail ? sb.from('angora_accounts').select('id').ilike('contact_email', myEmail) : Promise.resolve({ data: [] }),
-  ]);
-  const idSet = new Set();
-  (accessRows || []).forEach(r => idSet.add(r.account_id));
-  (ownedAccounts || []).forEach(r => idSet.add(r.id));
-  const accountIds = [...idSet];
+  const amAdmin = isAdminEmail(myEmail);
+  let accountIds = [];
+  if (partnerData.accountId) {
+    accountIds = [partnerData.accountId];
+  } else if (amAdmin) {
+    const { data: all } = await sb.from('angora_accounts').select('id').limit(500);
+    accountIds = (all || []).map(r => r.id);
+  } else {
+    const [{ data: accessRows }, { data: ownedAccounts }] = await Promise.all([
+      sb.from('angora_partner_access').select('account_id, role'),
+      myEmail ? sb.from('angora_accounts').select('id').ilike('contact_email', myEmail) : Promise.resolve({ data: [] }),
+    ]);
+    const idSet = new Set();
+    (accessRows || []).forEach(r => idSet.add(r.account_id));
+    (ownedAccounts || []).forEach(r => idSet.add(r.id));
+    accountIds = [...idSet];
+  }
   if (accountIds.length === 0) {
     partnerMsg.threads = [];
     partnerMsg.ready = true;
@@ -1184,28 +1202,91 @@ const partnerData = {
   inventory: [],
   sales: [],
   ready: false,
+  isAdmin: false,
+  availableAccounts: [], // [{id, name}] — multi-account for admins
+};
+
+// Renders an account picker at the top of the partner app. Shown for admins
+// (who need to impersonate) and for any viewer with >1 account. Selecting an
+// account reloads all data for that account.
+function renderPartnerAccountSwitcher() {
+  let host = document.getElementById('partner-account-switcher');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'partner-account-switcher';
+    host.style.cssText = 'position:sticky;top:0;z-index:50;background:linear-gradient(135deg,#faf8ff,#fff);border-bottom:1px solid var(--border);padding:8px 16px;display:none;align-items:center;gap:8px;font-family:var(--sans);font-size:11px;';
+    const app = document.getElementById('app') || document.querySelector('.app') || document.body.firstElementChild;
+    if (app && app.parentNode) app.parentNode.insertBefore(host, app);
+    else document.body.prepend(host);
+  }
+  const accounts = partnerData.availableAccounts || [];
+  const showIt = partnerData.isAdmin || accounts.length > 1;
+  host.style.display = showIt ? 'flex' : 'none';
+  if (!showIt) return;
+  const current = partnerData.accountId || (accounts[0] && accounts[0].id);
+  const badge = partnerData.isAdmin
+    ? '<span style="background:#0A0A0A;color:#fff;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.5px">ADMIN</span>'
+    : '<span style="color:var(--muted);font-size:10px">Account</span>';
+  const options = accounts.map(a => `<option value="${a.id}"${a.id===current?' selected':''}>${(a.name||'').replace(/</g,'&lt;')}</option>`).join('');
+  host.innerHTML = `${badge}
+    <select id="partner-account-select" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:11px;background:#fff;color:var(--text);font-family:inherit;cursor:pointer">${options}</select>`;
+  const sel = document.getElementById('partner-account-select');
+  if (sel) sel.onchange = () => window.partnerSwitchAccount(sel.value);
+}
+
+window.partnerSwitchAccount = async function(accountId) {
+  if (!accountId || accountId === partnerData.accountId) return;
+  localStorage.setItem('angoraPartnerAcctId', accountId);
+  // Reload all data for the new account
+  await partnerLoadAccountData();
+  await partnerLoadThreads();
+  renderPartnerMessagesList();
+  // Re-render whatever screen is visible
+  if (typeof renderPartnerHome === 'function') try { renderPartnerHome(); } catch(e) {}
+  if (typeof renderPartnerInventory === 'function') try { renderPartnerInventory(); } catch(e) {}
+  if (typeof renderPartnerFba === 'function') try { renderPartnerFba(); } catch(e) {}
+  if (typeof renderPartnerOrders === 'function') try { renderPartnerOrders(); } catch(e) {}
+  if (typeof renderPartnerReports === 'function') try { renderPartnerReports(); } catch(e) {}
 };
 
 async function partnerLoadAccountData() {
   const sb = partnerSupabase(); if (!sb) return;
-  // Figure out which accounts the partner has access to.
-  // TWO sources: (1) explicit angora_partner_access grants, (2) accounts
-  // whose contact_email matches the signed-in user's email. This way a PSM
-  // can set up an account in Garden and the partner can log in immediately
-  // using that email without a separate grants step.
+  // Figure out which accounts the viewer has access to.
+  // THREE sources, in priority order:
+  //   (0) Internal admin (alex@/ben@joinangora.com) → ALL accounts (for QA / impersonation)
+  //   (1) explicit angora_partner_access grants
+  //   (2) accounts whose contact_email matches the signed-in user's email
   const { data: sess } = await sb.auth.getUser();
   const myEmail = (sess?.user?.email || '').toLowerCase();
-  const [{ data: access }, { data: ownedAccounts }] = await Promise.all([
-    sb.from('angora_partner_access').select('account_id').limit(10),
-    myEmail ? sb.from('angora_accounts').select('id').ilike('contact_email', myEmail).limit(10) : Promise.resolve({ data: [] }),
-  ]);
-  const ids = new Set();
-  (access || []).forEach(r => ids.add(r.account_id));
-  (ownedAccounts || []).forEach(r => ids.add(r.id));
-  const accountIds = [...ids];
-  if (accountIds.length === 0) { partnerData.ready = true; return; }
-  // Pick the first account for now (multi-account can come later)
-  const accountId = accountIds[0];
+  partnerData.isAdmin = isAdminEmail(myEmail);
+
+  let allAccounts = [];
+  if (partnerData.isAdmin) {
+    const { data: all } = await sb.from('angora_accounts')
+      .select('id, name').order('name').limit(500);
+    allAccounts = all || [];
+  } else {
+    const [{ data: access }, { data: ownedAccounts }] = await Promise.all([
+      sb.from('angora_partner_access').select('account_id').limit(50),
+      myEmail ? sb.from('angora_accounts').select('id, name').ilike('contact_email', myEmail).limit(50) : Promise.resolve({ data: [] }),
+    ]);
+    const grantedIds = new Set((access || []).map(r => r.account_id));
+    if (grantedIds.size > 0) {
+      const { data: granted } = await sb.from('angora_accounts')
+        .select('id, name').in('id', [...grantedIds]);
+      (granted || []).forEach(a => allAccounts.push(a));
+    }
+    (ownedAccounts || []).forEach(a => {
+      if (!allAccounts.find(x => x.id === a.id)) allAccounts.push(a);
+    });
+  }
+  partnerData.availableAccounts = allAccounts;
+  renderPartnerAccountSwitcher();
+  if (allAccounts.length === 0) { partnerData.ready = true; return; }
+  // Prefer a previously-selected account if still available, else first
+  const saved = localStorage.getItem('angoraPartnerAcctId');
+  const pick = (saved && allAccounts.find(a => a.id === saved)) ? saved : allAccounts[0].id;
+  const accountId = pick;
   partnerData.accountId = accountId;
   const { data: account } = await sb.from('angora_accounts').select('id, name, status').eq('id', accountId).single();
   partnerData.account = account;
@@ -1531,13 +1612,16 @@ function bindRealAuth() {
     if (!sb) { if (msgEl) msgEl.textContent = 'Auth service not available.'; return; }
     if (msgEl) { msgEl.textContent = 'Checking your email\u2026'; msgEl.style.color = 'var(--muted)'; }
     // Gate: the email MUST be on file in the Garden as the account's contact_email.
+    // Exception: Angora internal admins (alex@, ben@) always bypass for QA / impersonation.
     const emailLower = email.toLowerCase();
-    let isAllowed = false;
-    try {
-      const { data: acctRows } = await sb.from('angora_accounts')
-        .select('id').ilike('contact_email', emailLower).limit(1);
-      isAllowed = !!(acctRows && acctRows.length > 0);
-    } catch(e) { console.warn('signup gate error', e); }
+    let isAllowed = isAdminEmail(emailLower);
+    if (!isAllowed) {
+      try {
+        const { data: acctRows } = await sb.from('angora_accounts')
+          .select('id').ilike('contact_email', emailLower).limit(1);
+        isAllowed = !!(acctRows && acctRows.length > 0);
+      } catch(e) { console.warn('signup gate error', e); }
+    }
     if (!isAllowed) {
       if (msgEl) {
         msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
