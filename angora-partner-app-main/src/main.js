@@ -1139,9 +1139,21 @@ const partnerData = {
 
 async function partnerLoadAccountData() {
   const sb = partnerSupabase(); if (!sb) return;
-  // Figure out which accounts the partner has access to
-  const { data: access } = await sb.from('angora_partner_access').select('account_id').limit(5);
-  const accountIds = (access || []).map(r => r.account_id);
+  // Figure out which accounts the partner has access to.
+  // TWO sources: (1) explicit angora_partner_access grants, (2) accounts
+  // whose contact_email matches the signed-in user's email. This way a PSM
+  // can set up an account in Garden and the partner can log in immediately
+  // using that email without a separate grants step.
+  const { data: sess } = await sb.auth.getUser();
+  const myEmail = (sess?.user?.email || '').toLowerCase();
+  const [{ data: access }, { data: ownedAccounts }] = await Promise.all([
+    sb.from('angora_partner_access').select('account_id').limit(10),
+    myEmail ? sb.from('angora_accounts').select('id').ilike('contact_email', myEmail).limit(10) : Promise.resolve({ data: [] }),
+  ]);
+  const ids = new Set();
+  (access || []).forEach(r => ids.add(r.account_id));
+  (ownedAccounts || []).forEach(r => ids.add(r.id));
+  const accountIds = [...ids];
   if (accountIds.length === 0) { partnerData.ready = true; return; }
   // Pick the first account for now (multi-account can come later)
   const accountId = accountIds[0];
@@ -1468,7 +1480,24 @@ function bindRealAuth() {
     if (!email) return;
     const sb = await ensurePartnerSupabaseReady();
     if (!sb) { if (msgEl) msgEl.textContent = 'Auth service not available.'; return; }
-    if (msgEl) msgEl.textContent = 'Sending magic link\u2026';
+    if (msgEl) { msgEl.textContent = 'Checking your email\u2026'; msgEl.style.color = 'var(--muted)'; }
+    // Gate: the email MUST be on file in the Garden as the account's contact_email.
+    const emailLower = email.toLowerCase();
+    let isAllowed = false;
+    try {
+      const { data: acctRows } = await sb.from('angora_accounts')
+        .select('id').ilike('contact_email', emailLower).limit(1);
+      isAllowed = !!(acctRows && acctRows.length > 0);
+    } catch(e) { console.warn('signup gate error', e); }
+    if (!isAllowed) {
+      if (msgEl) {
+        msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
+          'Please use the email your Partner Success Manager has on your account, or reach out to them to add this email.';
+        msgEl.style.color = '#dc2626';
+      }
+      return;
+    }
+    if (msgEl) { msgEl.textContent = 'Sending magic link\u2026'; msgEl.style.color = 'var(--muted)'; }
     const { error } = await sb.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.href }
