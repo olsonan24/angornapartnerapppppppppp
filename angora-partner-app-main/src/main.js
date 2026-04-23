@@ -66,196 +66,9 @@ const AMBIENT_SURFACE_SELECTOR = [
 ].join(", ");
 const INTERACTIVE_TEXT_SELECTOR = [".session-link"].join(", ");
 
-const REPORTS = {
-  mar20: {
-    date: "Mar 20, 2026",
-    profit: "$8,120",
-    margin: "31.2% margin",
-    units: "580 units",
-    rev: "$26,020",
-    fees: "$5,872",
-    ads: "$3,340",
-    skus: [
-      {
-        name: "Bookshelf for Kids",
-        meta: "340 units | ACoS 11.2%",
-        profit: "$5,440",
-        margin: "33.1% margin",
-        color: "var(--green)",
-      },
-      {
-        name: "Kids Art Table",
-        meta: "240 units | ACoS 14.8%",
-        profit: "$2,680",
-        margin: "28.4% margin",
-        color: "var(--blue)",
-      },
-    ],
-    summary:
-      "Strong week for Cal & Rye with both SKUs performing above 28% margin. Bookshelf leads at 33% with efficient ad spend.",
-    bullets: [
-      { color: "var(--green)", text: "Both SKUs above target margin threshold" },
-      { color: "var(--green)", text: "ACoS well below 20% across all campaigns" },
-      { color: "var(--yellow)", text: "Kids Art Table inventory running low - reorder advised" },
-      { color: "var(--red)", text: "Storage fees trending up - review inbound timing" },
-    ],
-  },
-  mar13: {
-    date: "Mar 13, 2026",
-    profit: "$7,510",
-    margin: "29.8% margin",
-    units: "542 units",
-    rev: "$25,200",
-    fees: "$5,640",
-    ads: "$3,100",
-    skus: [
-      {
-        name: "Bookshelf for Kids",
-        meta: "318 units | ACoS 12.1%",
-        profit: "$5,020",
-        margin: "31.8% margin",
-        color: "var(--green)",
-      },
-      {
-        name: "Kids Art Table",
-        meta: "224 units | ACoS 15.3%",
-        profit: "$2,490",
-        margin: "27.1% margin",
-        color: "var(--blue)",
-      },
-    ],
-    summary:
-      "Solid week with revenue slightly down from prior week. Both SKUs holding healthy margins. ACoS crept up slightly on Kids Art Table - worth monitoring.",
-    bullets: [
-      { color: "var(--green)", text: "Revenue within 3% of prior week - stable" },
-      { color: "var(--yellow)", text: "Kids Art Table ACoS increased to 15.3% - review bids" },
-      { color: "var(--green)", text: "FBA stock levels healthy across both SKUs" },
-      { color: "var(--yellow)", text: "Storage costs slightly elevated - Q1 seasonality" },
-    ],
-  },
-  mar6: {
-    date: "Mar 6, 2026",
-    profit: "$6,890",
-    margin: "28.1% margin",
-    units: "510 units",
-    rev: "$24,500",
-    fees: "$5,480",
-    ads: "$3,050",
-    skus: [
-      {
-        name: "Bookshelf for Kids",
-        meta: "302 units | ACoS 12.8%",
-        profit: "$4,720",
-        margin: "30.2% margin",
-        color: "var(--green)",
-      },
-      {
-        name: "Kids Art Table",
-        meta: "208 units | ACoS 16.1%",
-        profit: "$2,170",
-        margin: "25.4% margin",
-        color: "var(--orange)",
-      },
-    ],
-    summary:
-      "Slower week driven by lower Kids Art Table conversion. Bookshelf continues to be the primary profit driver. Recommend increasing Kids Art Table bids on top-of-search placements.",
-    bullets: [
-      { color: "var(--yellow)", text: "Kids Art Table margin dipped below 26% - investigate" },
-      { color: "var(--green)", text: "Bookshelf for Kids performing consistently above 30%" },
-      { color: "var(--red)", text: "Kids Art Table ACoS at 16.1% - bid review recommended" },
-      { color: "var(--yellow)", text: "Overall units down 6% week-over-week" },
-    ],
-  },
-  feb27: {
-    date: "Feb 27, 2026",
-    profit: "$7,200",
-    margin: "30.4% margin",
-    units: "528 units",
-    rev: "$23,700",
-    fees: "$5,200",
-    ads: "$2,900",
-    skus: [
-      {
-        name: "Bookshelf for Kids",
-        meta: "310 units | ACoS 11.9%",
-        profit: "$4,980",
-        margin: "32.1% margin",
-        color: "var(--green)",
-      },
-      {
-        name: "Kids Art Table",
-        meta: "218 units | ACoS 14.2%",
-        profit: "$2,220",
-        margin: "27.8% margin",
-        color: "var(--blue)",
-      },
-    ],
-    summary:
-      "Good week overall with efficient ad spend across both SKUs. Bookshelf continues to lead on margin. Kids Art Table rebounded from the prior week.",
-    bullets: [
-      { color: "var(--green)", text: "Ad spend efficiency improved - ACoS down across both SKUs" },
-      { color: "var(--green)", text: "Kids Art Table rebounded with 218 units sold" },
-      { color: "var(--green)", text: "Overall margin above 30% for the week" },
-      { color: "var(--yellow)", text: "Inbound shipment PO-2026-0118 delayed 3 days" },
-    ],
-  },
-};
+let REPORTS = {}; // populated at runtime by renderPartnerReports() from live sales
 
-const CHART_DATA = {
-  all: [
-    ["Apr 7", 14200, 3800],
-    ["Apr 14", 13800, 3600],
-    ["Apr 21", 15100, 4100],
-    ["Apr 28", 14600, 3900],
-    ["May 5", 15800, 4300],
-    ["May 12", 16200, 4500],
-    ["May 19", 15600, 4200],
-    ["May 26", 17100, 4800],
-    ["Jun 2", 16800, 4600],
-    ["Jun 9", 18200, 5100],
-    ["Jun 16", 17600, 4900],
-    ["Jun 23", 19100, 5400],
-    ["Jun 30", 18500, 5200],
-    ["Jul 7", 19800, 5600],
-    ["Jul 14", 20100, 5700],
-    ["Jul 21", 19600, 5500],
-    ["Jul 28", 21200, 6000],
-    ["Aug 4", 20800, 5900],
-    ["Aug 11", 22100, 6300],
-    ["Aug 18", 21600, 6100],
-    ["Aug 25", 22800, 6500],
-    ["Sep 1", 23200, 6600],
-    ["Sep 8", 22600, 6400],
-    ["Sep 15", 23900, 6800],
-    ["Sep 22", 24100, 6900],
-    ["Sep 29", 23600, 6700],
-    ["Oct 6", 24800, 7100],
-    ["Oct 13", 25200, 7200],
-    ["Oct 20", 24600, 7000],
-    ["Oct 27", 25800, 7400],
-    ["Nov 3", 26100, 7500],
-    ["Nov 10", 25600, 7300],
-    ["Nov 17", 27200, 7800],
-    ["Nov 24", 26800, 7600],
-    ["Dec 1", 28100, 8100],
-    ["Dec 8", 27600, 7900],
-    ["Dec 15", 29200, 8400],
-    ["Dec 22", 28800, 8200],
-    ["Dec 29", 27400, 7700],
-    ["Jan 5", 25600, 7200],
-    ["Jan 12", 24200, 6800],
-    ["Jan 19", 23800, 6600],
-    ["Jan 26", 24600, 6900],
-    ["Feb 2", 23200, 6500],
-    ["Feb 9", 22800, 6300],
-    ["Feb 16", 23600, 6600],
-    ["Feb 23", 23700, 7200],
-    ["Mar 2", 24500, 6890],
-    ["Mar 9", 25200, 7510],
-    ["Mar 16", 26020, 8120],
-    ["Mar 20", 26020, 8120],
-  ],
-};
+let CHART_DATA = { all: [] }; // populated at runtime by renderPartnerReports() from live weekly sales buckets
 
 const RANGE_CONFIG = {
   "4w": { weeks: 4, deltas: ["vs last wk", "vs last wk"] },
@@ -544,37 +357,44 @@ function renderReport(id) {
   }
 
   currentReportId = id;
-  document.getElementById("rd-title").textContent = "Weekly Report";
-  document.getElementById("rd-date").textContent = report.date;
-  document.getElementById("rd-profit").textContent = report.profit;
-  document.getElementById("rd-margin").textContent = report.margin;
-  document.getElementById("rd-units").textContent = report.units;
-  document.getElementById("rd-rev").textContent = report.rev;
-  document.getElementById("rd-fees").textContent = report.fees;
-  document.getElementById("rd-ads").textContent = report.ads;
-  document.getElementById("rd-summary").textContent = report.summary;
-  document.getElementById("rd-skus").innerHTML = report.skus
-    .map(
-      (sku) => `
-        <div class="sr">
-          <div class="sdot" style="background:${sku.color}"></div>
-          <div style="flex:1">
-            <div class="sn">${sku.name}</div>
-            <div class="sm">${sku.meta}</div>
-          </div>
-          <div>
-            <div class="spro" style="color:${sku.color}">${sku.profit}</div>
-            <div class="smgn">${sku.margin}</div>
-          </div>
-        </div>`
-    )
-    .join("");
-  document.getElementById("rd-bullets").innerHTML = report.bullets
-    .map(
-      (bullet) =>
-        `<div class="aiitem"><div class="aidot" style="background:${bullet.color}"></div>${bullet.text}</div>`
-    )
-    .join("");
+  const setText = (elId, val) => { const n = document.getElementById(elId); if (n) n.textContent = val; };
+  setText("rd-title", "Weekly Report");
+  setText("rd-date", report.date);
+  setText("rd-profit", report.profit);
+  setText("rd-margin", report.margin);
+  setText("rd-units", report.units);
+  setText("rd-rev", report.rev);
+  setText("rd-fees", report.fees);
+  setText("rd-ads", report.ads);
+  setText("rd-summary", report.summary || "");
+  const skusEl = document.getElementById("rd-skus");
+  if (skusEl) {
+    skusEl.innerHTML = (report.skus || [])
+      .map(
+        (sku) => `
+          <div class="sr">
+            <div class="sdot" style="background:${sku.color}"></div>
+            <div style="flex:1">
+              <div class="sn">${sku.name}</div>
+              <div class="sm">${sku.meta}</div>
+            </div>
+            <div>
+              <div class="spro" style="color:${sku.color}">${sku.profit}</div>
+              <div class="smgn">${sku.margin}</div>
+            </div>
+          </div>`
+      )
+      .join("") || '<div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">No SKU data for this week.</div>';
+  }
+  const bulletsEl = document.getElementById("rd-bullets");
+  if (bulletsEl) {
+    bulletsEl.innerHTML = (report.bullets || [])
+      .map(
+        (bullet) =>
+          `<div class="aiitem"><div class="aidot" style="background:${bullet.color}"></div>${bullet.text}</div>`
+      )
+      .join("");
+  }
   refreshMotionTargets(document.getElementById("screen-report-detail"));
 
   return true;
@@ -701,8 +521,20 @@ function animateChartDot(node, delay = 0) {
 
 function drawChart() {
   const config = RANGE_CONFIG[currentRange];
-  const slice = CHART_DATA.all.slice(-config.weeks);
+  const slice = (CHART_DATA.all || []).slice(-config.weeks);
   currentData = slice;
+
+  // Empty state: no real weekly data yet → flatten the chart to zero so we
+  // never render fake lines.
+  if (!slice.length) {
+    ['rev-area','rev-line','pro-area','pro-line'].forEach(id => {
+      const n = document.getElementById(id); if (n) n.setAttribute('d','');
+    });
+    const lbl = document.getElementById('chart-labels'); if (lbl) lbl.innerHTML = '';
+    const dr = document.getElementById('delta-rev'); if (dr) { dr.textContent = '\u2014'; dr.style.color = 'var(--muted)'; }
+    const dp = document.getElementById('delta-pro'); if (dp) { dp.textContent = '\u2014'; dp.style.color = 'var(--muted)'; }
+    return;
+  }
 
   const width = 300;
   const height = 90;
@@ -711,7 +543,7 @@ function drawChart() {
   const profits = slice.map((point) => point[2]);
   const allValues = [...revenues, ...profits];
   const minValue = Math.min(...allValues) * 0.88;
-  const maxValue = Math.max(...allValues) * 1.06;
+  const maxValue = (Math.max(...allValues) || 1) * 1.06;
   const pointCount = slice.length;
 
   const getX = (index) => (index / (pointCount - 1)) * (width - padding * 2) + padding;
@@ -787,8 +619,9 @@ function drawChart() {
 
   const currentPoint = slice[pointCount - 1];
   const comparisonPoint = slice[Math.max(0, pointCount - Math.ceil(config.weeks / (config.weeks >= 26 ? 2 : 1)))];
-  const revenueDelta = ((currentPoint[1] - comparisonPoint[1]) / comparisonPoint[1] * 100).toFixed(1);
-  const profitDelta = ((currentPoint[2] - comparisonPoint[2]) / comparisonPoint[2] * 100).toFixed(1);
+  const safeDiv = (a, b) => (b ? ((a - b) / b * 100) : 0);
+  const revenueDelta = safeDiv(currentPoint[1], comparisonPoint[1]).toFixed(1);
+  const profitDelta = safeDiv(currentPoint[2], comparisonPoint[2]).toFixed(1);
   const formatDelta = (value) => `${value >= 0 ? "+" : "-"}${Math.abs(value)}%`;
 
   const revenueDeltaNode = document.getElementById("delta-rev");
@@ -1018,11 +851,18 @@ async function partnerLoadThreads() {
   const byId = {}; (accounts || []).forEach(a => { byId[a.id] = a; });
   partnerMsg.accountsById = byId;
 
-  const { data: threads } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
-  const lastMsgs = await Promise.all((threads || []).map(t =>
+  const { data: threadsRaw } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
+  // Filter: only show threads that have at least one message authored by a
+  // verified Garden PSM (sender_type = 'garden'). Partners should not see
+  // empty threads or threads where only they have posted.
+  const gardenCounts = await Promise.all((threadsRaw || []).map(t =>
+    sb.from('angora_messages').select('id', { count: 'exact', head: true }).eq('thread_id', t.id).eq('sender_type', 'garden').then(r => r.count || 0)
+  ));
+  const threads = (threadsRaw || []).filter((_, i) => gardenCounts[i] > 0);
+  const lastMsgs = await Promise.all(threads.map(t =>
     sb.from('angora_messages').select('content, sender_type, created_at').eq('thread_id', t.id).order('created_at', { ascending: false }).limit(1).then(r => r.data && r.data[0])
   ));
-  partnerMsg.threads = (threads || []).map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
+  partnerMsg.threads = threads.map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
   partnerMsg.ready = true;
 
   // Global realtime for inbox list updates
@@ -1376,47 +1216,293 @@ function renderPartnerOrders() {
 // ── PARTNER: REPORTS / P&L ────────────────────────────────────────────────
 // NOTE: Angora takes a 5% service fee on net revenue. On the partner side
 // we silently deduct it from Net Profit but do NOT show it as a line item.
+// Compute profit metrics for an arbitrary set of sales rows (scoped to the
+// currently-loaded partnerData.products). Returns exact cents rounded to the
+// nearest hundredth — Alex requires this for accounting accuracy.
+function partnerComputeMetrics(salesRows) {
+  const products = partnerData.products || [];
+  const byId = {}; products.forEach(p => byId[p.id] = p);
+  let units=0, rev=0, fba=0, referral=0, cogs=0, ads=0, other=0;
+  const perSku = {};
+  (salesRows || []).forEach(s => {
+    const p = byId[s.product_id]; if (!p) return;
+    const u = parseInt(s.units_sold) || 0;
+    const r = parseFloat(s.revenue) || 0;
+    const refPct = (parseFloat(p.referral_fee_pct) || 15) / 100;
+    const fbaPer = parseFloat(p.fba_fee_manual) || 0;
+    const cogsPer = parseFloat(p.cogs) || 0;
+    const ad = parseFloat(s.ad_spend) || 0;
+    const oth = parseFloat(s.other_fees) || 0;
+    units += u; rev += r; referral += r * refPct; fba += u * fbaPer;
+    cogs += u * cogsPer; ads += ad; other += oth;
+    if (!perSku[p.id]) perSku[p.id] = { product: p, units:0, rev:0, ads:0, fba:0, referral:0, cogs:0, other:0 };
+    const ps = perSku[p.id];
+    ps.units += u; ps.rev += r; ps.ads += ad; ps.fba += u*fbaPer;
+    ps.referral += r*refPct; ps.cogs += u*cogsPer; ps.other += oth;
+  });
+  const angoraFee = rev * 0.05;
+  const netProfit = rev - fba - referral - cogs - ads - other - angoraFee;
+  const round2 = (n) => Math.round(n * 100) / 100;
+  return {
+    units, rev: round2(rev), fba: round2(fba), referral: round2(referral),
+    cogs: round2(cogs), ads: round2(ads), other: round2(other),
+    angoraFee: round2(angoraFee), netProfit: round2(netProfit),
+    margin: rev > 0 ? (netProfit / rev * 100) : 0,
+    perSku,
+  };
+}
+
+// Bucket partnerData.sales into Sunday-anchored weekly buckets, most-recent
+// first. Each entry has { key, start, end, label, sales[] }.
+function partnerWeeklyBuckets() {
+  const sales = (partnerData.sales || []).slice();
+  if (sales.length === 0) return [];
+  // Week start = Sunday (local). Key = YYYY-MM-DD of start.
+  const toSundayKey = (d) => {
+    const dt = new Date(d);
+    dt.setHours(0,0,0,0);
+    dt.setDate(dt.getDate() - dt.getDay()); // back to Sunday
+    return dt;
+  };
+  const byKey = {};
+  sales.forEach(s => {
+    const sd = new Date((s.sale_date || s.date) + (s.sale_date ? 'T12:00:00' : ''));
+    if (isNaN(sd.getTime())) return;
+    const start = toSundayKey(sd);
+    const key = start.toISOString().slice(0,10);
+    if (!byKey[key]) {
+      const end = new Date(start); end.setDate(end.getDate()+6);
+      byKey[key] = { key, start, end, sales: [] };
+    }
+    byKey[key].sales.push(s);
+  });
+  // Also backfill empty weeks so the chart has a continuous x axis (last 12
+  // weeks including zeros).
+  const now = new Date(); now.setHours(0,0,0,0);
+  const thisSun = toSundayKey(now);
+  for (let i = 0; i < 12; i++) {
+    const start = new Date(thisSun); start.setDate(start.getDate() - 7*i);
+    const key = start.toISOString().slice(0,10);
+    if (!byKey[key]) {
+      const end = new Date(start); end.setDate(end.getDate()+6);
+      byKey[key] = { key, start, end, sales: [] };
+    }
+  }
+  const weeks = Object.values(byKey).sort((a,b) => a.start - b.start);
+  const monthShort = (d) => d.toLocaleDateString(undefined, { month:'short', day:'numeric' });
+  weeks.forEach(w => { w.label = monthShort(w.start); });
+  return weeks;
+}
+
 function renderPartnerReports() {
   if (!partnerData.ready) return;
   const el = (id) => document.getElementById(id);
   if (!el('rpt-profit')) return;
   const products = partnerData.products || [];
   const sales = partnerData.sales || [];
-  if (products.length === 0 || sales.length === 0) {
-    el('rpt-profit').textContent = '$0';
-    el('rpt-margin').textContent = '0% margin';
-    el('rpt-units').textContent = '0 units';
-    el('rpt-revenue').textContent = '$0';
-    el('rpt-fees').textContent = '$0';
-    el('rpt-ads').textContent = '$0';
+  const fmt$ = (n) => '$' + (Math.round(n * 100) / 100).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});
+
+  // Current week = most recent 7 days (rolling) — matches what the header
+  // summary used to show.
+  const cutoff7 = Date.now() - 7 * 86400000;
+  const salesRecent = sales.filter(s => {
+    const t = new Date((s.sale_date || s.date) + (s.sale_date ? 'T12:00:00' : '')).getTime();
+    return !isNaN(t) && t >= cutoff7;
+  });
+  const cur = partnerComputeMetrics(salesRecent);
+
+  el('rpt-profit').textContent = fmt$(cur.netProfit);
+  el('rpt-profit').style.color = cur.netProfit >= 0 ? '' : 'var(--red)';
+  el('rpt-margin').textContent = `${cur.margin.toFixed(1)}% margin`;
+  el('rpt-units').textContent = `${cur.units.toLocaleString()} units`;
+  el('rpt-revenue').textContent = fmt$(cur.rev);
+  el('rpt-fees').textContent = fmt$(cur.fba + cur.referral);
+  el('rpt-ads').textContent = fmt$(cur.ads);
+
+  // Header title + subtitle
+  const now = new Date();
+  if (el('rpt-page-title')) el('rpt-page-title').textContent = 'Weekly Report';
+  if (el('rpt-page-sub')) {
+    const end = new Date(); end.setHours(0,0,0,0);
+    const start = new Date(end); start.setDate(start.getDate()-6);
+    const short = (d) => d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    const acctName = partnerData.account?.name || '';
+    el('rpt-page-sub').textContent = (acctName ? acctName + '  |  ' : '') + short(start) + ' \u2013 ' + short(end);
+  }
+
+  // SKU Breakdown (for current 7-day window)
+  const skuListEl = el('rpt-sku-list');
+  if (skuListEl) {
+    const perSku = Object.values(cur.perSku || {});
+    if (perSku.length === 0) {
+      skuListEl.innerHTML = '<div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">No sales in the last 7 days yet.</div>';
+    } else {
+      // Sort by profit desc
+      perSku.forEach(ps => {
+        ps.profit = ps.rev - ps.fba - ps.referral - ps.cogs - ps.ads - ps.other - (ps.rev * 0.05);
+        ps.acos = ps.rev > 0 ? (ps.ads / ps.rev * 100) : 0;
+        ps.marginPct = ps.rev > 0 ? (ps.profit / ps.rev * 100) : 0;
+      });
+      perSku.sort((a,b) => b.profit - a.profit);
+      const palette = ['var(--green)','var(--blue)','var(--purple2)','var(--orange)','var(--yellow)','var(--red)'];
+      skuListEl.innerHTML = perSku.map((ps, i) => {
+        const color = palette[i % palette.length];
+        const name = (ps.product.name || ps.product.sku || 'Product').replace(/</g,'&lt;');
+        return `<div class="sr">
+          <div class="sdot" style="background:${color}"></div>
+          <div style="flex:1">
+            <div class="sn">${name}</div>
+            <div class="sm">${ps.units.toLocaleString()} units  |  ACoS ${ps.acos.toFixed(1)}%</div>
+          </div>
+          <div>
+            <div class="spro" style="color:${color}">${fmt$(ps.profit)}</div>
+            <div class="smgn">${ps.marginPct.toFixed(1)}% margin</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  // Build weekly buckets for the Archive + chart
+  const weeks = partnerWeeklyBuckets();
+  REPORTS = {};
+  const chart = [];
+  weeks.forEach(w => {
+    const m = partnerComputeMetrics(w.sales);
+    w.metrics = m;
+    REPORTS[w.key] = {
+      date: w.start.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}),
+      profit: fmt$(m.netProfit),
+      margin: `${m.margin.toFixed(1)}% margin`,
+      units: `${m.units.toLocaleString()} units`,
+      rev: fmt$(m.rev),
+      fees: fmt$(m.fba + m.referral),
+      ads: fmt$(m.ads),
+      summary: '',
+      skus: Object.values(m.perSku || {}).map((ps, i) => {
+        const palette = ['var(--green)','var(--blue)','var(--purple2)','var(--orange)'];
+        const profit = ps.rev - ps.fba - ps.referral - ps.cogs - ps.ads - ps.other - (ps.rev * 0.05);
+        const acos = ps.rev > 0 ? (ps.ads / ps.rev * 100) : 0;
+        const mg = ps.rev > 0 ? (profit / ps.rev * 100) : 0;
+        return {
+          name: ps.product.name || ps.product.sku || 'Product',
+          meta: `${ps.units.toLocaleString()} units | ACoS ${acos.toFixed(1)}%`,
+          profit: fmt$(profit),
+          margin: `${mg.toFixed(1)}% margin`,
+          color: palette[i % palette.length],
+        };
+      }),
+      bullets: [],
+    };
+    chart.push([w.label, Math.round(m.rev * 100)/100, Math.round(m.netProfit * 100)/100]);
+  });
+  CHART_DATA.all = chart;
+
+  // Report Archive — last ~10 weeks, newest first, highlight current
+  const archive = el('rpt-archive');
+  if (archive) {
+    const sorted = weeks.slice().reverse();
+    // Find any weeks with actual activity (units > 0) to mark as "has data"
+    const rows = sorted.slice(0, 10).map((w, idx) => {
+      const m = w.metrics;
+      const hasData = m.units > 0;
+      const isCurrent = idx === 0;
+      const profitColor = m.netProfit >= 0 ? 'var(--purple2)' : 'var(--red)';
+      const dateLabel = 'Week of ' + w.start.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+      const sub = hasData
+        ? `${fmt$(m.netProfit)} profit  |  ${m.margin.toFixed(1)}% margin`
+        : 'No sales logged this week';
+      const currentPill = isCurrent ? '<span class="pill pb">Current</span>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+      const bg = isCurrent ? 'background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08)'
+                           : 'background:var(--surface);border:1px solid var(--border)';
+      return `<div onclick="openReport('${w.key}')" style="${bg};border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s">
+        <div style="width:38px;height:38px;border-radius:11px;background:${isCurrent ? 'rgba(10,10,10,.08)' : 'var(--surface2)'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${isCurrent ? profitColor : 'var(--muted)'}" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">${dateLabel}</div>
+          <div style="font-size:10px;color:var(--muted)">${sub}</div>
+        </div>
+        ${currentPill}
+      </div>`;
+    }).join('');
+    archive.innerHTML = rows || '<div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">No weekly history yet.</div>';
+  }
+
+  // Hide AI card until we wire real AI summaries (no fake bullets).
+  const aiCard = el('rpt-ai-card');
+  if (aiCard) aiCard.style.display = 'none';
+
+  // Redraw chart with new CHART_DATA.all
+  try { drawChart(); } catch(e) { /* chart may not be mounted yet */ }
+
+  // Urgent tasks
+  try { renderPartnerUrgent(); } catch(e) {}
+}
+
+// Urgent Tasks screen — shows low-stock SKUs and upcoming/late POs. Empty
+// state when nothing is urgent (no fake demo cards).
+function renderPartnerUrgent() {
+  const listEl = document.getElementById('urgent-list');
+  const subEl = document.getElementById('urgent-sub');
+  if (!listEl) return;
+  const items = [];
+  // Low stock (<= 2 weeks runway per SKU)
+  const byProd = {};
+  (partnerData.inventory || []).forEach(i => {
+    byProd[i.product_id] = (byProd[i.product_id] || 0) + (i.quantity || 0);
+  });
+  (partnerData.products || []).forEach(p => {
+    const qty = byProd[p.id] || 0;
+    const salesR = (partnerData.sales || []).filter(s => s.product_id === p.id && (Date.now() - new Date((s.sale_date||s.date) + 'T12:00:00').getTime()) < 28*86400000);
+    const uPerDay = pdSum(salesR, 'units_sold') / 28;
+    if (uPerDay > 0) {
+      const days = qty / uPerDay;
+      if (days < 14) {
+        items.push({
+          kind: 'lowstock',
+          title: 'Low Stock: ' + (p.name || p.sku || 'Product'),
+          sub: `${qty.toLocaleString()} units on hand  |  ~${Math.round(days)} days at current velocity`,
+          color: days < 7 ? 'var(--red)' : 'var(--orange)',
+        });
+      }
+    }
+  });
+  // Late / approaching POs
+  const today = Date.now();
+  (partnerData.purchaseOrders || []).forEach(po => {
+    if (['received','cancelled'].includes(po.po_status)) return;
+    if (!po.expected_date) return;
+    const exp = new Date(po.expected_date + 'T12:00:00').getTime();
+    const days = Math.round((exp - today) / 86400000);
+    if (days < 0) {
+      items.push({
+        kind: 'po-late',
+        title: 'PO Overdue: ' + (po.po_number || po.id.slice(0,8)),
+        sub: `Expected ${po.expected_date}  |  ${Math.abs(days)} days late`,
+        color: 'var(--red)',
+      });
+    } else if (days <= 3) {
+      items.push({
+        kind: 'po-soon',
+        title: 'PO Arriving: ' + (po.po_number || po.id.slice(0,8)),
+        sub: `Expected ${po.expected_date}  |  in ${days} day${days===1?'':'s'}`,
+        color: 'var(--orange)',
+      });
+    }
+  });
+  if (subEl) subEl.textContent = items.length === 0 ? 'Nothing urgent' : `${items.length} item${items.length===1?'':'s'} need your attention`;
+  if (items.length === 0) {
+    listEl.innerHTML = '<div style="padding:28px 16px;text-align:center;color:var(--muted);font-size:11px">All clear &mdash; no urgent items right now.</div>';
     return;
   }
-  const byId = {}; products.forEach(p => byId[p.id] = p);
-  let units=0, rev=0, fba=0, referral=0, cogs=0, ads=0;
-  sales.forEach(s => {
-    const p = byId[s.product_id]; if (!p) return;
-    const u = s.units_sold || 0; const r = parseFloat(s.revenue) || 0;
-    const refPct = (p.referral_fee_pct || 15) / 100;
-    const fbaPer = parseFloat(p.fba_fee_manual || 0) || 0; // auto-calc skipped on partner side for simplicity
-    const cogsPer = parseFloat(p.cogs || 0);
-    units += u;
-    rev += r;
-    referral += r * refPct;
-    fba += u * fbaPer;
-    cogs += u * cogsPer;
-    ads += parseFloat(s.ad_spend || 0);
-  });
-  const angoraFee = rev * 0.05; // SILENT: not shown as line item
-  const netProfit = rev - fba - referral - cogs - ads - angoraFee;
-  const margin = rev > 0 ? (netProfit / rev * 100) : 0;
-  const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
-  el('rpt-profit').textContent = fmt$(netProfit);
-  el('rpt-profit').style.color = netProfit >= 0 ? '' : 'var(--red)';
-  el('rpt-margin').textContent = `${margin.toFixed(1)}% margin`;
-  el('rpt-units').textContent = `${units.toLocaleString()} units`;
-  el('rpt-revenue').textContent = fmt$(rev);
-  el('rpt-fees').textContent = fmt$(fba + referral);
-  el('rpt-ads').textContent = fmt$(ads);
+  listEl.innerHTML = items.map(it => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;display:flex;gap:12px;align-items:flex-start">
+    <div style="width:8px;height:8px;border-radius:50%;background:${it.color};margin-top:6px;flex-shrink:0"></div>
+    <div style="flex:1">
+      <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px">${it.title.replace(/</g,'&lt;')}</div>
+      <div style="font-size:11px;color:var(--muted)">${it.sub.replace(/</g,'&lt;')}</div>
+    </div>
+  </div>`).join('');
 }
 
 function pdSum(arr, key) { return arr.reduce((s, x) => s + (parseFloat(x[key]) || 0), 0); }
@@ -1592,10 +1678,11 @@ async function partnerRealLogin(session) {
   saveState({ authenticated: true, partnerName: (session?.user?.email || 'Partner').split('@')[0], screen: DEFAULT_SCREEN });
   setPartnerName((session?.user?.email || 'Partner').split('@')[0]);
   setAuthenticatedView(true);
-  await Promise.all([
-    partnerLoadThreads(),
-    partnerLoadAccountData(),
-  ]);
+  // IMPORTANT: load account data FIRST so partnerData.accountId is set before
+  // partnerLoadThreads runs. Otherwise admin sessions (ben@/alex@) would
+  // pull EVERY account's threads instead of just the active one.
+  await partnerLoadAccountData();
+  await partnerLoadThreads();
   renderPartnerMessagesList();
 }
 
