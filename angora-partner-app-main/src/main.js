@@ -1599,44 +1599,89 @@ async function partnerRealLogin(session) {
   renderPartnerMessagesList();
 }
 
+async function _partnerCheckAccessAllowed(sb, emailLower) {
+  // Admins always allowed (for QA / impersonation)
+  if (isAdminEmail(emailLower)) return true;
+  try {
+    const { data: acctRows } = await sb.from('angora_accounts')
+      .select('id').ilike('contact_email', emailLower).limit(1);
+    if (acctRows && acctRows.length > 0) return true;
+  } catch(e) { console.warn('access gate error (accounts)', e); }
+  try {
+    const { data: grantRows } = await sb.from('angora_partner_access')
+      .select('id').ilike('email', emailLower).limit(1);
+    if (grantRows && grantRows.length > 0) return true;
+  } catch(e) { console.warn('access gate error (partner_access)', e); }
+  return false;
+}
+
 function bindRealAuth() {
   const form = document.getElementById('real-login-form');
   if (!form) return;
+  const magicBtn = document.getElementById('real-login-magic');
+
+  async function _getInputs() {
+    const emailEl = document.getElementById('real-login-email');
+    const passEl  = document.getElementById('real-login-password');
+    const msgEl   = document.getElementById('real-login-msg');
+    const email = (emailEl?.value || '').trim();
+    const pass  = (passEl?.value || '');
+    return { email, pass, msgEl };
+  }
+
+  function _setMsg(msgEl, text, color) {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.style.color = color || 'var(--muted)';
+  }
+
+  // Primary: email + password sign-in
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const emailEl = document.getElementById('real-login-email');
-    const msgEl = document.getElementById('real-login-msg');
-    const email = (emailEl?.value || '').trim();
-    if (!email) return;
+    const { email, pass, msgEl } = await _getInputs();
+    if (!email) { _setMsg(msgEl, 'Enter your email.', '#dc2626'); return; }
+    if (!pass)  { _setMsg(msgEl, 'Enter your password (or use the magic-link option).', '#dc2626'); return; }
     const sb = await ensurePartnerSupabaseReady();
-    if (!sb) { if (msgEl) msgEl.textContent = 'Auth service not available.'; return; }
-    if (msgEl) { msgEl.textContent = 'Checking your email\u2026'; msgEl.style.color = 'var(--muted)'; }
-    // Gate: the email MUST be on file in the Garden as the account's contact_email.
-    // Exception: Angora internal admins (alex@, ben@) always bypass for QA / impersonation.
+    if (!sb) { _setMsg(msgEl, 'Auth service not available.', '#dc2626'); return; }
+    _setMsg(msgEl, 'Signing in\u2026');
     const emailLower = email.toLowerCase();
-    let isAllowed = isAdminEmail(emailLower);
-    if (!isAllowed) {
-      try {
-        const { data: acctRows } = await sb.from('angora_accounts')
-          .select('id').ilike('contact_email', emailLower).limit(1);
-        isAllowed = !!(acctRows && acctRows.length > 0);
-      } catch(e) { console.warn('signup gate error', e); }
-    }
-    if (!isAllowed) {
-      if (msgEl) {
-        msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
-          'Please use the email your Partner Success Manager has on your account, or reach out to them to add this email.';
-        msgEl.style.color = '#dc2626';
-      }
+    const allowed = await _partnerCheckAccessAllowed(sb, emailLower);
+    if (!allowed) {
+      msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
+        'Ask your Partner Success Manager to add this email to your account.';
+      msgEl.style.color = '#dc2626';
       return;
     }
-    if (msgEl) { msgEl.textContent = 'Sending magic link\u2026'; msgEl.style.color = 'var(--muted)'; }
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+      _setMsg(msgEl, 'Sign-in failed: ' + error.message, '#dc2626');
+      return;
+    }
+    _setMsg(msgEl, '\u2713 Signed in. Loading your workspace\u2026', '#059669');
+  });
+
+  // Secondary: magic-link fallback (no password required)
+  if (magicBtn) magicBtn.addEventListener('click', async () => {
+    const { email, msgEl } = await _getInputs();
+    if (!email) { _setMsg(msgEl, 'Enter your email first.', '#dc2626'); return; }
+    const sb = await ensurePartnerSupabaseReady();
+    if (!sb) { _setMsg(msgEl, 'Auth service not available.', '#dc2626'); return; }
+    const emailLower = email.toLowerCase();
+    _setMsg(msgEl, 'Checking access\u2026');
+    const allowed = await _partnerCheckAccessAllowed(sb, emailLower);
+    if (!allowed) {
+      msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
+        'Ask your Partner Success Manager to add this email to your account.';
+      msgEl.style.color = '#dc2626';
+      return;
+    }
+    _setMsg(msgEl, 'Sending magic link\u2026');
     const { error } = await sb.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: window.location.href }
     });
-    if (error) { if (msgEl) { msgEl.textContent = 'Error: ' + error.message; msgEl.style.color = '#dc2626'; } return; }
-    if (msgEl) { msgEl.textContent = '\u2713 Check your inbox for the sign-in link.'; msgEl.style.color = '#059669'; }
+    if (error) { _setMsg(msgEl, 'Error: ' + error.message, '#dc2626'); return; }
+    _setMsg(msgEl, '\u2713 Check your inbox for the sign-in link.', '#059669');
   });
 }
 
