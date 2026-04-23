@@ -27,121 +27,42 @@
 </head>
 <body>
 <div class="login-shell" id="login-shell">
-  <div class="login-layout">
-    <section class="login-story">
-      <div class="login-brand-row">
-        <div>
-          <img class="login-logo" src="https://framerusercontent.com/images/Q2JXvbS4BJTwpsp3ShAk0XdKak.png?width=240&height=58" alt="Angora">
-          <div class="login-brand-name">Angora Partner</div>
-          <div class="login-brand-sub">Premium visibility for brand partners</div>
-        </div>
-      </div>
+  <div class="login-simple">
+    <div class="login-simple-brand">
+      <img class="login-simple-logo" src="https://framerusercontent.com/images/Q2JXvbS4BJTwpsp3ShAk0XdKak.png?width=240&height=58" alt="Angora">
+    </div>
+    <h1 class="login-simple-title">Angora Partner App</h1>
+    <p class="login-simple-sub">Sign in to access your workspace.</p>
 
-      <div class="login-hero">
-        <div class="login-badge">Partner Portal Demo</div>
-        <h1 class="login-title">Open a calm, premium workspace for reports, inventory, and weekly decisions.</h1>
-        <p class="login-copy">
-          This first pass uses a local demo session instead of real email auth, so you can step into the product
-          experience now and wire secure sign-in later.
-        </p>
-      </div>
+    <form id="real-login-form" class="login-simple-form">
+      <label class="login-simple-label" for="real-login-email">Email</label>
+      <input
+        class="login-simple-input"
+        id="real-login-email"
+        type="email"
+        autocomplete="email"
+        placeholder="your-email@brand.com"
+        required>
 
-      <div class="login-feature-list">
-        <div class="login-feature">
-          <div class="login-feature-dot"></div>
-          Weekly reports with margin visibility and AI-ready takeaways
-        </div>
-        <div class="login-feature">
-          <div class="login-feature-dot"></div>
-          Inventory, FBA, and purchase order tracking in one flow
-        </div>
-        <div class="login-feature">
-          <div class="login-feature-dot"></div>
-          Faster partner communication without chasing updates by email
-        </div>
-      </div>
+      <label class="login-simple-label" for="real-login-password">Password</label>
+      <input
+        class="login-simple-input"
+        id="real-login-password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="••••••••">
 
-      <div class="login-preview-card">
-        <div class="login-preview-top">
-          <div>
-            <div class="login-preview-label">This Week</div>
-            <div class="login-preview-title">Cal &amp; Rye Snapshot</div>
-          </div>
-          <span class="pill pg">Live Demo</span>
-        </div>
-        <div class="login-preview-grid">
-          <div class="login-preview-stat">
-            <div class="login-preview-value">$8,120</div>
-            <div class="login-preview-meta">Profit</div>
-          </div>
-          <div class="login-preview-stat">
-            <div class="login-preview-value">847</div>
-            <div class="login-preview-meta">FBA Units</div>
-          </div>
-          <div class="login-preview-stat">
-            <div class="login-preview-value">3</div>
-            <div class="login-preview-meta">Open POs</div>
-          </div>
-        </div>
-        <div class="login-preview-note">
-          Built to feel like a client-ready partner workspace, even while the authentication layer is still in demo mode.
-        </div>
-      </div>
-    </section>
+      <button class="login-simple-primary" type="submit">Sign In</button>
 
-    <section class="login-panel">
-      <div class="login-card">
-        <div class="login-card-top">
-          <div class="login-card-eyebrow">Demo Access</div>
-          <h2 class="login-card-title">Enter the workspace</h2>
-          <p class="login-card-copy">
-            Email and password can come next. For now, enter a name or skip straight into the default demo profile.
-          </p>
-        </div>
+      <button class="login-simple-secondary" type="button" id="real-login-magic">
+        Email me a magic link instead
+      </button>
 
-        <form id="demo-login-form" class="demo-form">
-          <label class="demo-label" for="demo-name-input">Your Name</label>
-          <input
-            class="demo-input"
-            id="demo-name-input"
-            name="partnerName"
-            type="text"
-            autocomplete="name"
-            placeholder="Benjamin"
-          >
-
-          <div class="demo-meta-row">
-            <div class="demo-meta-card">
-              <div class="demo-meta-label">Workspace</div>
-              <div class="demo-meta-value">Cal &amp; Rye</div>
-            </div>
-            <div class="demo-meta-card">
-              <div class="demo-meta-label">Auth Mode</div>
-              <div class="demo-meta-value">Local Demo</div>
-            </div>
-          </div>
-
-          <button class="demo-primary" type="submit">Enter Demo Workspace</button>
-        </form>
-
-        <button class="demo-secondary" id="demo-skip-button" type="button">Use Default Demo Profile</button>
-
-        <div class="demo-footnote">
-          No email required yet. This demo just stores a lightweight local session in the browser.
-        </div>
-
-        <div style="margin-top:18px;padding-top:18px;border-top:1px solid rgba(10,10,10,0.08)">
-          <div class="demo-meta-label" style="margin-bottom:8px">Real Partner Sign In</div>
-          <form id="real-login-form" class="demo-form" style="gap:8px">
-            <input class="demo-input" id="real-login-email" type="email" placeholder="your-email@brand.com" autocomplete="email" required>
-            <button class="demo-primary" type="submit" style="margin-top:4px">Send Magic Link</button>
-            <div id="real-login-msg" style="font-size:10px;color:var(--muted);text-align:center;margin-top:4px"></div>
-          </form>
-        </div>
-      </div>
-    </section>
+      <div id="real-login-msg" class="login-simple-msg"></div>
+    </form>
   </div>
 </div>
+
 
 <div class="phone">
   <div class="island"></div>
