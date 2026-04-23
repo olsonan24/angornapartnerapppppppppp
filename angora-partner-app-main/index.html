@@ -192,7 +192,7 @@
 
     <!-- ══════ REPORTS ══════ -->
     <div class="ts" id="screen-reports">
-      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Weekly Report</div><div class="psub">Mar 20, 2026</div></div>
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle" id="rpt-page-title">Weekly Report</div><div class="psub" id="rpt-page-sub">—</div></div>
 
       <!-- Profit hero -->
       <div class="profit-hero">
@@ -296,76 +296,22 @@
 
       <!-- SKU Breakdown -->
       <div class="slbl">SKU Breakdown</div>
-      <div class="slist">
-        <div class="sr"><div class="sdot" style="background:var(--green)"></div><div style="flex:1"><div class="sn">Bookshelf for Kids</div><div class="sm">340 units  |  ACoS 11.2%</div></div><div><div class="spro">$5,440</div><div class="smgn">33.1% margin</div></div></div>
-        <div class="sr"><div class="sdot" style="background:var(--blue)"></div><div style="flex:1"><div class="sn">Kids Art Table</div><div class="sm">240 units  |  ACoS 14.8%</div></div><div><div class="spro" style="color:var(--blue)">$2,680</div><div class="smgn">28.4% margin</div></div></div>
+      <div class="slist" id="rpt-sku-list">
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
 
       <!-- AI Summary -->
-      <div class="aicard">
+      <div class="aicard" id="rpt-ai-card" style="display:none">
         <div class="aihd"><span class="aibadge">AI</span><span class="aititle">Account Summary</span></div>
-        <div class="aibody">Strong week for Cal &amp; Rye with both SKUs performing above 28% margin. Bookshelf leads at 33% with efficient ad spend.</div>
-        <div class="aitems">
-          <div class="aiitem"><div class="aidot" style="background:var(--green)"></div>Both SKUs above target margin threshold</div>
-          <div class="aiitem"><div class="aidot" style="background:var(--green)"></div>ACoS well below 20% across all campaigns</div>
-          <div class="aiitem"><div class="aidot" style="background:var(--yellow)"></div>Kids Art Table inventory running low  -  reorder advised</div>
-          <div class="aiitem"><div class="aidot" style="background:var(--red)"></div>Storage fees trending up  -  review inbound timing</div>
-        </div>
+        <div class="aibody" id="rpt-ai-body">&mdash;</div>
+        <div class="aitems" id="rpt-ai-items"></div>
       </div>
 
       <!-- Document Archive -->
       <div class="slbl">Report Archive</div>
-      <div style="padding:0 22px;display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
+      <div id="rpt-archive" style="padding:0 22px;display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
 
-        <!-- Current week - highlighted -->
-        <div onclick="openReport('mar20')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
-          <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 20, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$8,120 profit  |  31.2% margin</div>
-          </div>
-          <span class="pill pb">Current</span>
-        </div>
-
-        <div onclick="openReport('mar13')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 13, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$7,510 profit  |  29.8% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <div onclick="openReport('mar6')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 6, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$6,890 profit  |  28.1% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <div onclick="openReport('feb27')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Feb 27, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$7,200 profit  |  30.4% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <!-- View all -->
-        <div style="text-align:center;padding:10px 0">
-          <span style="font-size:11px;color:var(--purple);font-weight:600;cursor:pointer;letter-spacing:.04em">View all reports →</span>
-        </div>
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
       <div class="sp"></div>
     </div>
@@ -381,10 +327,9 @@
       </div>
       <div class="slbl">By SKU</div>
       <div class="slist" id="inv-sku-list">
-        <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--green);margin-top:5px"></div><div><div class="sin">Bookshelf for Kids</div><div class="siloc">Warehouse: 280  |  FBA: 540</div></div></div><div><div class="sic" style="color:var(--text)">820</div><span class="pill pg">Healthy</span></div></div><div class="prow"><span>820 / 1,000 target</span><span>82%</span></div><div class="pbar"><div class="pfill" style="width:82%;background:var(--green)"></div></div></div>
-        <div class="skuinv"><div class="sit"><div class="sil"><div class="sdot" style="background:var(--orange);margin-top:5px"></div><div><div class="sin">Kids Art Table</div><div class="siloc">Warehouse: 116  |  FBA: 307</div></div></div><div><div class="sic" style="color:var(--orange)">423</div><span class="pill po">Low Stock</span></div></div><div class="prow"><span>423 / 800 target</span><span style="color:var(--orange)">53%</span></div><div class="pbar"><div class="pfill" style="width:53%;background:var(--orange)"></div></div></div>
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
-      <div class="adv"><div class="advhd"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span class="advlbl">Reorder Advisory</span></div><div class="advtxt">Kids Art Table is projected to stock out in <span class="advhl">~14 days</span> at current sell rate. A new PO is recommended within the next 3–5 days.</div></div>
+      <div id="inv-advisory"></div>
       <div class="sp"></div>
     </div>
 
@@ -398,9 +343,7 @@
       </div>
       <div class="slbl">Order Timeline</div>
       <div class="tlwrap" id="po-timeline">
-        <div class="tli"><div class="tleft"><div class="tldot tlo"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0142</div><div><div class="podlbl">Arriving</div><div class="podate" style="color:var(--orange)">Feb 26</div></div></div><div class="podet">Kids Art Table × 400 units<br>$10,200  |  Transit from warehouse → FBA</div><div class="poft"><span class="pill po">In Transit</span><span class="pods">2 days out</span></div></div></div>
-        <div class="tli"><div class="tleft"><div class="tldot tlb"></div><div class="tlline"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0138</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--blue)">Mar 4</div></div></div><div class="podet">Bookshelf for Kids × 800 units<br>$9,600  |  Production → Angora warehouse</div><div class="poft"><span class="pill pb">In Production</span><span class="pods">8 days out</span></div></div></div>
-        <div class="tli"><div class="tleft"><div class="tldot tlg"></div></div><div class="tlcard"><div class="tltop"><div class="poid">PO-2026-0131</div><div><div class="podlbl">Expected</div><div class="podate" style="color:var(--muted)">Mar 18</div></div></div><div class="podet">Kids Art Table × 640 units<br>$5,000  |  Awaiting factory confirmation</div><div class="poft"><span class="pill pm">Pending</span><span class="pods">22 days out</span></div></div></div>
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
       <div class="sp"></div>
     </div>
@@ -415,10 +358,9 @@
       </div>
       <div class="slbl">FBA by SKU</div>
       <div class="slist" id="fba-sku-list">
-        <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.6" stroke-linecap="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div><div class="fn">Bookshelf for Kids</div><div class="floc">540 units  |  SFO4</div></div></div><div><div class="fcount" style="color:var(--green)">540</div><span class="pill pg" style="float:right;margin-top:4px">Healthy</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~85 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--green)">~36 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.42/u</div></div></div></div>
-        <div class="fcard"><div class="ftop"><div class="fleft"><div class="fico" style="background:rgba(10,10,10,.08)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.6" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div><div><div class="fn">Kids Art Table</div><div class="floc">307 units  |  LGB4</div></div></div><div><div class="fcount" style="color:var(--orange)">307</div><span class="pill po" style="float:right;margin-top:4px">Low</span></div></div><div class="fmet"><div><div class="fml">Sell-through/wk</div><div class="fmv">~150 units</div></div><div><div class="fml">Days of stock</div><div class="fmv" style="color:var(--orange)">~14 days</div></div><div><div class="fml">Storage fee</div><div class="fmv">$0.61/u</div></div></div></div>
+        <div style="padding:20px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
-      <div class="ibcard"><div class="iblbl">Inbound Shipment</div><div class="ibrow"><div><div class="ibpo">PO-2026-0142 → FBA</div><div class="ibsub">400 units  |  Kids Art Table  |  Arriving Feb 26</div></div><span class="pill po">In Transit</span></div></div>
+      <div id="fba-inbound"></div>
       <div class="sp"></div>
     </div>
 
@@ -522,78 +464,10 @@
       <div class="ph">
         <div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
         <div class="ptitle">Urgent Tasks</div>
-        <div class="psub">3 items need your attention</div>
+        <div class="psub" id="urgent-sub">&mdash;</div>
       </div>
-
-      <div style="padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
-
-        <!-- Task 1: Invalid payment -->
-        <div style="background:linear-gradient(135deg,rgba(10,10,10,.08),rgba(10,10,10,.08));border:1px solid rgba(10,10,10,.08);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            </div>
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Invalid Payment Method</div>
-                <span class="pill pr">Urgent</span>
-              </div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px">Your Amazon Seller Central charge method has been declined. Ad campaigns are at risk of pausing within 24 hours if not resolved.</div>
-              <div style="display:flex;gap:8px">
-                <div style="flex:1;background:var(--red);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:#fff">Update in Seller Central →</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Task 2: Approve PO -->
-        <div style="background:linear-gradient(135deg,rgba(10,10,10,.08),rgba(10,10,10,.08));border:1px solid rgba(10,10,10,.08);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-            </div>
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Approve Purchase Order</div>
-                <span class="pill po">Action</span>
-              </div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:4px"><span style="color:var(--text);font-weight:600">PO-2026-0143</span>  |  Kids Art Table × 640 units</div>
-              <div style="font-size:11px;color:var(--muted);margin-bottom:12px">$12,800  |  Factory ready to ship  -  approval needed to proceed</div>
-              <div style="display:flex;gap:8px">
-                <div style="flex:1;background:var(--orange);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'" onclick="switchTab('orders')">
-                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:#fff">Approve PO →</span>
-                </div>
-                <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 14px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
-                  <span style="font-family:var(--display);font-size:11px;font-weight:600;color:var(--muted)">Decline</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Task 3: Campaign Manager -->
-        <div style="background:linear-gradient(135deg,rgba(251,191,36,.07),rgba(251,191,36,.02));border:1px solid rgba(251,191,36,.2);border-radius:18px;padding:18px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(251,191,36,.38)'" onmouseout="this.style.borderColor='rgba(251,191,36,.2)'">
-          <div style="display:flex;align-items:flex-start;gap:12px">
-            <div style="width:38px;height:38px;border-radius:11px;background:rgba(251,191,36,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-            </div>
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-                <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)">Campaign Budget Depleted</div>
-                <span class="pill" style="background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.22)">Review</span>
-              </div>
-              <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:12px">2 Sponsored Products campaigns for Kids Art Table hit daily budget cap before 3 PM yesterday. Estimated missed revenue: <span style="color:var(--yellow);font-weight:600">~$340</span>. Consider increasing daily budgets.</div>
-              <div style="display:flex;gap:8px">
-                <div style="flex:1;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:9px;text-align:center;cursor:pointer;transition:opacity .15s" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'" onclick="switchTab('conv')">
-                  <span style="font-family:var(--display);font-size:11px;font-weight:700;color:var(--yellow)">Ask Ops Team →</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
+      <div id="urgent-list" style="padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+        <div style="padding:28px 16px;text-align:center;color:var(--muted);font-size:11px">Loading&hellip;</div>
       </div>
       <div class="sp"></div>
     </div>
