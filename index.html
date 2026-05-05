@@ -13,11 +13,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // Initialize Supabase client (same project as Garden)
-    window.ANGORA_SUPABASE_URL = "https://temzkjhkqnrtdwxckioy.supabase.co";
-    // Must match the Garden's publishable key (js/auth.js). The previous
-    // hardcoded JWT anon key had been rotated in Supabase, causing every
-    // REST/auth call to fail with "Invalid API key".
-    window.ANGORA_SUPABASE_ANON_KEY = "sb_publishable_kTc_bhsr0iiPmVV34aSdWg_5gfC5hR8";
+    window.ANGORA_SUPABASE_URL = "https://qzfsbqxldyvwxtotppku.supabase.co";
+    // Must match the Garden's publishable key so the partner app reads from
+    // the same Supabase project that the Garden writes to.
+    window.ANGORA_SUPABASE_ANON_KEY = "sb_publishable_2mgEj8U81hmB8OhDV9jx6w_4BtP275F";
     window.addEventListener("DOMContentLoaded", () => {
       if (window.supabase) {
         window.angoraSupabase = window.supabase.createClient(window.ANGORA_SUPABASE_URL, window.ANGORA_SUPABASE_ANON_KEY);
@@ -161,29 +160,29 @@
       </div>
 
       <div class="slbl">Your Account</div>
-      <div class="alist">
+      <div class="alist" id="home-account-list">
         <div class="ar green" onclick="switchTab('reports')">
           <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <div class="abody"><div class="aname">Weekly Report</div><div class="asub">Mar 20  |  2 SKUs  |  AI summary ready</div></div>
-          <div class="aright"><div class="aval" style="color:var(--green)">$8,120</div><span class="pill pb">New</span></div>
+          <div class="abody"><div class="aname">Weekly Report</div><div class="asub" id="home-rpt-sub">Loading…</div></div>
+          <div class="aright"><div class="aval" style="color:var(--green)" id="home-rpt-val">—</div><span class="pill pb">New</span></div>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         <div class="ar orange" onclick="switchTab('inventory')">
           <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
-          <div class="abody"><div class="aname">Inventory</div><div class="asub">Warehouse + FBA  |  1 low stock alert</div></div>
-          <div class="aright"><div class="aval">1,243</div><span class="pill po">Low Stock</span></div>
+          <div class="abody"><div class="aname">Inventory</div><div class="asub" id="home-inv-sub">Loading…</div></div>
+          <div class="aright"><div class="aval" id="home-inv-val">—</div><span class="pill" id="home-inv-pill">—</span></div>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         <div class="ar purple2" onclick="switchTab('orders')">
           <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg></div>
-          <div class="abody"><div class="aname">Purchase Orders</div><div class="asub">3 open  |  1 arriving this week</div></div>
-          <div class="aright"><div class="aval" style="color:var(--purple2)">3 open</div><span class="pill pg">On Track</span></div>
+          <div class="abody"><div class="aname">Purchase Orders</div><div class="asub" id="home-po-sub">Loading…</div></div>
+          <div class="aright"><div class="aval" style="color:var(--purple2)" id="home-po-val">—</div><span class="pill pg" id="home-po-pill">—</span></div>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
         <div class="ar blue" onclick="switchTab('fba')">
           <div class="aico" style="background:rgba(96,165,250,.1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/></svg></div>
-          <div class="abody"><div class="aname">FBA Inventory</div><div class="asub">Amazon fulfillment  |  live data</div></div>
-          <div class="aright"><div class="aval" style="color:var(--purple2)">847</div><span class="pill pp">Active</span></div>
+          <div class="abody"><div class="aname">FBA Inventory</div><div class="asub" id="home-fba-sub">Amazon fulfillment  |  live data</div></div>
+          <div class="aright"><div class="aval" style="color:var(--purple2)" id="home-fba-val">—</div><span class="pill pp">Active</span></div>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
       </div>
@@ -192,7 +191,7 @@
 
     <!-- ══════ REPORTS ══════ -->
     <div class="ts" id="screen-reports">
-      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Weekly Report</div><div class="psub">Mar 20, 2026</div></div>
+      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle">Weekly Report</div><div class="psub" id="rpt-date-sub">—</div></div>
 
       <!-- Profit hero -->
       <div class="profit-hero">
@@ -294,11 +293,10 @@
         </div>
       </div>
 
-      <!-- SKU Breakdown -->
+      <!-- SKU Breakdown (dynamic) -->
       <div class="slbl">SKU Breakdown</div>
-      <div class="slist">
-        <div class="sr"><div class="sdot" style="background:var(--green)"></div><div style="flex:1"><div class="sn">Bookshelf for Kids</div><div class="sm">340 units  |  ACoS 11.2%</div></div><div><div class="spro">$5,440</div><div class="smgn">33.1% margin</div></div></div>
-        <div class="sr"><div class="sdot" style="background:var(--blue)"></div><div style="flex:1"><div class="sn">Kids Art Table</div><div class="sm">240 units  |  ACoS 14.8%</div></div><div><div class="spro" style="color:var(--blue)">$2,680</div><div class="smgn">28.4% margin</div></div></div>
+      <div class="slist" id="rpt-sku-list">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">Loading…</div>
       </div>
 
       <!-- AI Summary -->
@@ -313,59 +311,10 @@
         </div>
       </div>
 
-      <!-- Document Archive -->
+      <!-- Report Archive (dynamic) -->
       <div class="slbl">Report Archive</div>
-      <div style="padding:0 22px;display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
-
-        <!-- Current week - highlighted -->
-        <div onclick="openReport('mar20')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
-          <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 20, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$8,120 profit  |  31.2% margin</div>
-          </div>
-          <span class="pill pb">Current</span>
-        </div>
-
-        <div onclick="openReport('mar13')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 13, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$7,510 profit  |  29.8% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <div onclick="openReport('mar6')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Mar 6, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$6,890 profit  |  28.1% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <div onclick="openReport('feb27')" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .18s" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:38px;height:38px;border-radius:11px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <div style="flex:1">
-            <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of Feb 27, 2026</div>
-            <div style="font-size:10px;color:var(--muted)">$7,200 profit  |  30.4% margin</div>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-        </div>
-
-        <!-- View all -->
-        <div style="text-align:center;padding:10px 0">
-          <span style="font-size:11px;color:var(--purple);font-weight:600;cursor:pointer;letter-spacing:.04em">View all reports →</span>
-        </div>
+      <div id="rpt-archive-list" style="padding:0 22px;display:flex;flex-direction:column;gap:8px;margin-bottom:28px">
+        <div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">Loading…</div>
       </div>
       <div class="sp"></div>
     </div>
