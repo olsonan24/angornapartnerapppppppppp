@@ -27,7 +27,7 @@ const AUTHENTICATED_CLASS = "authenticated";
 const MOTION_READY_CLASS = "motion-ready";
 const RANGE_OPTIONS = ["4w", "8w", "3m", "6m", "1y"];
 const DEFAULT_RANGE = "4w";
-const DEFAULT_SCREEN = "home";
+const DEFAULT_SCREEN = "reports";
 const DEFAULT_DEMO_NAME = "Benjamin";
 const REDUCED_MOTION_QUERY = window.matchMedia("(prefers-reduced-motion: reduce)");
 const MOBILE_LOGIN_QUERY = window.matchMedia("(max-width: 768px)");
@@ -358,7 +358,7 @@ function renderReport(id) {
 
   currentReportId = id;
   const setText = (elId, val) => { const n = document.getElementById(elId); if (n) n.textContent = val; };
-  setText("rd-title", "Weekly Report");
+  setText("rd-title", "Account Report");
   setText("rd-date", report.date);
   setText("rd-profit", report.profit);
   setText("rd-margin", report.margin);
@@ -618,11 +618,18 @@ function drawChart() {
   }
 
   const currentPoint = slice[pointCount - 1];
-  const comparisonPoint = slice[Math.max(0, pointCount - Math.ceil(config.weeks / (config.weeks >= 26 ? 2 : 1)))];
-  const safeDiv = (a, b) => (b ? ((a - b) / b * 100) : 0);
-  const revenueDelta = safeDiv(currentPoint[1], comparisonPoint[1]).toFixed(1);
-  const profitDelta = safeDiv(currentPoint[2], comparisonPoint[2]).toFixed(1);
-  const formatDelta = (value) => `${value >= 0 ? "+" : "-"}${Math.abs(value)}%`;
+  // Walk backwards from the ideal comparison index to find a non-zero data point
+  const idealIdx = Math.max(0, pointCount - Math.ceil(config.weeks / (config.weeks >= 26 ? 2 : 1)));
+  let compIdx = idealIdx;
+  while (compIdx > 0 && slice[compIdx][1] === 0 && slice[compIdx][2] === 0) compIdx--;
+  const comparisonPoint = slice[compIdx];
+  const safeDiv = (a, b) => (b ? ((a - b) / b * 100) : (a > 0 ? Infinity : 0));
+  const rawRevDelta = safeDiv(currentPoint[1], comparisonPoint[1]);
+  const rawProDelta = safeDiv(currentPoint[2], comparisonPoint[2]);
+  const formatDelta = (value) => {
+    if (!isFinite(value)) return 'New';
+    return `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(1)}%`;
+  };
 
   const revenueDeltaNode = document.getElementById("delta-rev");
   const profitDeltaNode = document.getElementById("delta-pro");
@@ -630,12 +637,12 @@ function drawChart() {
   const profitLabelNode = document.getElementById("delta-pro-label");
 
   if (revenueDeltaNode) {
-    revenueDeltaNode.textContent = formatDelta(Number.parseFloat(revenueDelta));
-    revenueDeltaNode.style.color = Number.parseFloat(revenueDelta) >= 0 ? "var(--green)" : "var(--red)";
+    revenueDeltaNode.textContent = formatDelta(rawRevDelta);
+    revenueDeltaNode.style.color = (!isFinite(rawRevDelta) || rawRevDelta >= 0) ? "var(--green)" : "var(--red)";
   }
   if (profitDeltaNode) {
-    profitDeltaNode.textContent = formatDelta(Number.parseFloat(profitDelta));
-    profitDeltaNode.style.color = Number.parseFloat(profitDelta) >= 0 ? "var(--purple2)" : "var(--red)";
+    profitDeltaNode.textContent = formatDelta(rawProDelta);
+    profitDeltaNode.style.color = (!isFinite(rawProDelta) || rawProDelta >= 0) ? "var(--purple2)" : "var(--red)";
   }
   if (revenueLabelNode) {
     revenueLabelNode.textContent = `Revenue ${config.deltas[0]}`;
@@ -794,7 +801,7 @@ const partnerMsg = {
 
 // Angora internal admins. These emails skip the signup gate and can impersonate
 // any partner account via the account switcher at the top of the partner app.
-const PARTNER_ADMIN_EMAILS = ['ben@joinangora.com','alex@joinangora.com'];
+const PARTNER_ADMIN_EMAILS = ['ben@joinangora.com','alex@joinangora.com','kenny@joinangora.com'];
 function isAdminEmail(email) {
   return !!email && PARTNER_ADMIN_EMAILS.includes(String(email).toLowerCase());
 }
@@ -914,7 +921,7 @@ function renderPartnerMessagesList() {
     const escaped = preview.replace(/</g,'&lt;');
     const nm = (t.account?.name || 'Angora').replace(/</g,'&lt;');
     return `<div class="crow ${isUnread ? 'unread' : ''}" data-thread-id="${t.id}">
-      <div class="cav" style="background:linear-gradient(135deg,#6b4fcc,#0A0A0A)">${ini}${isUnread ? '<div class="conl"></div>' : ''}</div>
+      <div class="cav" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">${ini}${isUnread ? '<div class="conl"></div>' : ''}</div>
       <div class="cbody"><div class="cname">${nm}</div><div class="cprev">${escaped}</div></div>
       <div class="cmeta"><div class="ctime">${time}</div>${isUnread ? '<div class="ubadge">\u2022</div>' : ''}</div>
     </div>`;
@@ -964,7 +971,7 @@ async function partnerOpenConv(threadId) {
 function partnerBubbleHtml(m) {
   const me = m.sender_type === 'partner';
   const ini = me ? 'ME' : 'AN';
-  const bg = me ? 'linear-gradient(135deg,#2563eb,#767C89)' : 'linear-gradient(135deg,#6b4fcc,#0A0A0A)';
+  const bg = me ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'linear-gradient(135deg,#3b82f6,#2563eb)';
   const txt = (m.content || '').replace(/</g,'&lt;');
   return `<div class="msg-row ${me ? 'me' : ''}">
     <div class="msg-av" style="background:${bg}">${ini}</div>
@@ -1055,8 +1062,8 @@ function renderPartnerAccountSwitcher() {
     host = document.createElement('div');
     host.id = 'partner-account-switcher';
     host.style.cssText = 'position:sticky;top:0;z-index:50;background:linear-gradient(135deg,#faf8ff,#fff);border-bottom:1px solid var(--border);padding:8px 16px;display:none;align-items:center;gap:8px;font-family:var(--sans);font-size:11px;';
-    const app = document.getElementById('app') || document.querySelector('.app') || document.body.firstElementChild;
-    if (app && app.parentNode) app.parentNode.insertBefore(host, app);
+    const phone = document.querySelector('.phone');
+    if (phone) phone.insertBefore(host, phone.firstChild);
     else document.body.prepend(host);
   }
   const accounts = partnerData.availableAccounts || [];
@@ -1065,28 +1072,24 @@ function renderPartnerAccountSwitcher() {
   if (!showIt) return;
   const current = partnerData.accountId || (accounts[0] && accounts[0].id);
   const badge = partnerData.isAdmin
-    ? '<span style="background:#0A0A0A;color:#fff;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.5px">ADMIN</span>'
+    ? '<span style="background:#2563eb;color:#fff;padding:2px 8px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.5px">ADMIN</span>'
     : '<span style="color:var(--muted);font-size:10px">Account</span>';
   const options = accounts.map(a => `<option value="${a.id}"${a.id===current?' selected':''}>${(a.name||'').replace(/</g,'&lt;')}</option>`).join('');
   host.innerHTML = `${badge}
     <select id="partner-account-select" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:11px;background:#fff;color:var(--text);font-family:inherit;cursor:pointer">${options}</select>`;
   const sel = document.getElementById('partner-account-select');
-  if (sel) sel.onchange = () => window.partnerSwitchAccount(sel.value);
+  if (sel) sel.addEventListener('change', function() { window.partnerSwitchAccount(this.value); });
 }
 
 window.partnerSwitchAccount = async function(accountId) {
   if (!accountId || accountId === partnerData.accountId) return;
+  partnerData.accountId = accountId;
+  partnerData.ready = false;
   localStorage.setItem('angoraPartnerAcctId', accountId);
   // Reload all data for the new account
   await partnerLoadAccountData();
   await partnerLoadThreads();
   renderPartnerMessagesList();
-  // Re-render whatever screen is visible
-  if (typeof renderPartnerHome === 'function') try { renderPartnerHome(); } catch(e) {}
-  if (typeof renderPartnerInventory === 'function') try { renderPartnerInventory(); } catch(e) {}
-  if (typeof renderPartnerFba === 'function') try { renderPartnerFba(); } catch(e) {}
-  if (typeof renderPartnerOrders === 'function') try { renderPartnerOrders(); } catch(e) {}
-  if (typeof renderPartnerReports === 'function') try { renderPartnerReports(); } catch(e) {}
 };
 
 async function partnerLoadAccountData() {
@@ -1321,7 +1324,7 @@ function renderPartnerReports() {
 
   // Header title + subtitle
   const now = new Date();
-  if (el('rpt-page-title')) el('rpt-page-title').textContent = 'Weekly Report';
+  if (el('rpt-page-title')) el('rpt-page-title').textContent = 'Account Report';
   if (el('rpt-page-sub')) {
     const end = new Date(); end.setHours(0,0,0,0);
     const start = new Date(end); start.setDate(start.getDate()-6);
@@ -1558,7 +1561,7 @@ function renderPartnerHome() {
 
   // "Your Account" cards — dynamic values
   const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
-  // Weekly Report card
+  // Account Report card
   const rptVal = document.getElementById('home-rpt-val');
   const rptSub = document.getElementById('home-rpt-sub');
   if (rptVal) { const wp = partnerWeeklyProfit(); rptVal.textContent = fmt$(wp); }
