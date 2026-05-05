@@ -1136,7 +1136,7 @@ async function partnerLoadAccountData() {
     const productIds = partnerData.products.map(p => p.id);
     const [invRes, salesRes] = await Promise.all([
       sb.from('angora_inventory').select('*').in('product_id', productIds),
-      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('sale_date', new Date(Date.now() - 84*86400000).toISOString().slice(0,10)),
+      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('sale_date', new Date(Date.now() - 400*86400000).toISOString().slice(0,10)),
     ]);
     partnerData.inventory = invRes.data || [];
     partnerData.sales = salesRes.data || [];
@@ -1510,7 +1510,7 @@ function pdSum(arr, key) { return arr.reduce((s, x) => s + (parseFloat(x[key]) |
 function partnerRunwayDays() {
   // Avg units/day over last 28 days
   const cutoff = Date.now() - 28*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date((s.sale_date||s.date) + 'T12:00:00').getTime() >= cutoff);
   const totalUnits = pdSum(recent, 'units_sold');
   const avgPerDay = totalUnits / 28;
   if (avgPerDay <= 0) return null;
@@ -1521,7 +1521,7 @@ function partnerRunwayDays() {
 function partnerWeeklyProfit() {
   // Last 7 days: revenue - ads - other_fees - (units * cogs) - (units * fba_fee)
   const cutoff = Date.now() - 7*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date((s.sale_date||s.date) + 'T12:00:00').getTime() >= cutoff);
   const prodById = {}; partnerData.products.forEach(p => { prodById[p.id] = p; });
   let profit = 0;
   recent.forEach(s => {
@@ -1555,6 +1555,52 @@ function renderPartnerHome() {
   if (pos) pos.textContent = '0'; // PO tracking not yet in schema
   const updated = document.getElementById('home-updated');
   if (updated) updated.textContent = 'Live  |  Updated ' + new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+
+  // "Your Account" cards — dynamic values
+  const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+  // Weekly Report card
+  const rptVal = document.getElementById('home-rpt-val');
+  const rptSub = document.getElementById('home-rpt-sub');
+  if (rptVal) { const wp = partnerWeeklyProfit(); rptVal.textContent = fmt$(wp); }
+  if (rptSub) {
+    const skuCount = (partnerData.products || []).length;
+    rptSub.textContent = `This week  |  ${skuCount} SKU${skuCount !== 1 ? 's' : ''}  |  AI summary ready`;
+  }
+  // Inventory card
+  const invVal = document.getElementById('home-inv-val');
+  const invSub = document.getElementById('home-inv-sub');
+  const invPill = document.getElementById('home-inv-pill');
+  if (invVal || invSub) {
+    const totalInv = (partnerData.inventory || []).reduce((s, i) => s + (i.quantity || 0), 0);
+    const runway = partnerRunwayDays();
+    if (invVal) invVal.textContent = totalInv.toLocaleString();
+    if (invSub) invSub.textContent = `Warehouse + FBA  |  ${runway ? runway + ' days runway' : 'no velocity data'}`;
+    if (invPill) {
+      if (runway !== null && runway < 21) { invPill.textContent = 'Low Stock'; invPill.className = 'pill po'; }
+      else { invPill.textContent = 'Healthy'; invPill.className = 'pill pg'; }
+    }
+  }
+  // PO card
+  const poVal = document.getElementById('home-po-val');
+  const poSub = document.getElementById('home-po-sub');
+  const poPill = document.getElementById('home-po-pill');
+  if (poVal || poSub) {
+    const allPos = partnerData.purchaseOrders || [];
+    const openPos = allPos.filter(p => !['received','cancelled'].includes(p.po_status));
+    const inTransit = allPos.filter(p => p.po_status === 'in_transit').length;
+    if (poVal) poVal.textContent = openPos.length + ' open';
+    if (poSub) poSub.textContent = openPos.length > 0 ? `${openPos.length} open  |  ${inTransit} in transit` : 'No open purchase orders';
+    if (poPill) {
+      if (openPos.length === 0) { poPill.textContent = 'None'; poPill.className = 'pill pm'; }
+      else { poPill.textContent = 'On Track'; poPill.className = 'pill pg'; }
+    }
+  }
+  // FBA card
+  const fbaVal = document.getElementById('home-fba-val');
+  if (fbaVal) {
+    const fbaUnits = (partnerData.inventory || []).filter(i => i.location === 'fba').reduce((s, i) => s + (i.quantity || 0), 0);
+    fbaVal.textContent = fbaUnits.toLocaleString();
+  }
 }
 
 function renderPartnerInventory() {
@@ -1596,7 +1642,7 @@ function renderPartnerInventory() {
     if (total === 0) return '';
     // Velocity = avg units/wk
     const sales = partnerData.sales.filter(s => s.product_id === p.id);
-    const recent = sales.filter(s => (Date.now() - new Date(s.date).getTime()) < 84*86400000);
+    const recent = sales.filter(s => (Date.now() - new Date((s.sale_date||s.date) + 'T12:00:00').getTime()) < 84*86400000);
     const unitsPerWk = pdSum(recent, 'units_sold') / 12;
     const weeksLeft = unitsPerWk > 0 ? total / unitsPerWk : 99;
     let label = 'Healthy', colorVar = 'var(--green)', pillClass = 'pg', pct = 100;
@@ -1625,7 +1671,7 @@ function renderPartnerFba() {
   if (totalEl) totalEl.textContent = fbaTotal.toLocaleString();
   // ACoS = ad_spend / revenue over last 28d
   const cutoff = Date.now() - 28*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date((s.sale_date||s.date) + 'T12:00:00').getTime() >= cutoff);
   const rev = pdSum(recent, 'revenue');
   const ads = pdSum(recent, 'ad_spend');
   const acos = rev > 0 ? (ads/rev*100) : 0;
@@ -1647,7 +1693,7 @@ function renderPartnerFba() {
     if (q === 0) return '';
     const nm = (p.name || p.sku || 'Product').replace(/</g,'&lt;');
     // per-sku velocity
-    const sales = partnerData.sales.filter(s => s.product_id === p.id && (Date.now() - new Date(s.date).getTime()) < 28*86400000);
+    const sales = partnerData.sales.filter(s => s.product_id === p.id && (Date.now() - new Date((s.sale_date||s.date) + 'T12:00:00').getTime()) < 28*86400000);
     const uPerWk = pdSum(sales, 'units_sold') / 4;
     const daysLeft = uPerWk > 0 ? Math.round(q / (uPerWk / 7)) : null;
     const label = daysLeft === null ? 'No data' : (daysLeft < 14 ? 'Low' : (daysLeft < 28 ? 'Watch' : 'Healthy'));
