@@ -201,61 +201,49 @@ const REPORTS = {
   },
 };
 
-const CHART_DATA = {
-  all: [
-    ["Apr 7", 14200, 3800],
-    ["Apr 14", 13800, 3600],
-    ["Apr 21", 15100, 4100],
-    ["Apr 28", 14600, 3900],
-    ["May 5", 15800, 4300],
-    ["May 12", 16200, 4500],
-    ["May 19", 15600, 4200],
-    ["May 26", 17100, 4800],
-    ["Jun 2", 16800, 4600],
-    ["Jun 9", 18200, 5100],
-    ["Jun 16", 17600, 4900],
-    ["Jun 23", 19100, 5400],
-    ["Jun 30", 18500, 5200],
-    ["Jul 7", 19800, 5600],
-    ["Jul 14", 20100, 5700],
-    ["Jul 21", 19600, 5500],
-    ["Jul 28", 21200, 6000],
-    ["Aug 4", 20800, 5900],
-    ["Aug 11", 22100, 6300],
-    ["Aug 18", 21600, 6100],
-    ["Aug 25", 22800, 6500],
-    ["Sep 1", 23200, 6600],
-    ["Sep 8", 22600, 6400],
-    ["Sep 15", 23900, 6800],
-    ["Sep 22", 24100, 6900],
-    ["Sep 29", 23600, 6700],
-    ["Oct 6", 24800, 7100],
-    ["Oct 13", 25200, 7200],
-    ["Oct 20", 24600, 7000],
-    ["Oct 27", 25800, 7400],
-    ["Nov 3", 26100, 7500],
-    ["Nov 10", 25600, 7300],
-    ["Nov 17", 27200, 7800],
-    ["Nov 24", 26800, 7600],
-    ["Dec 1", 28100, 8100],
-    ["Dec 8", 27600, 7900],
-    ["Dec 15", 29200, 8400],
-    ["Dec 22", 28800, 8200],
-    ["Dec 29", 27400, 7700],
-    ["Jan 5", 25600, 7200],
-    ["Jan 12", 24200, 6800],
-    ["Jan 19", 23800, 6600],
-    ["Jan 26", 24600, 6900],
-    ["Feb 2", 23200, 6500],
-    ["Feb 9", 22800, 6300],
-    ["Feb 16", 23600, 6600],
-    ["Feb 23", 23700, 7200],
-    ["Mar 2", 24500, 6890],
-    ["Mar 9", 25200, 7510],
-    ["Mar 16", 26020, 8120],
-    ["Mar 20", 26020, 8120],
-  ],
-};
+// CHART_DATA is rebuilt dynamically from partnerData.sales after account load.
+// Each entry: [label, weeklyRevenue, weeklyProfit]
+let CHART_DATA = { all: [] };
+
+// Aggregate daily sales into weekly [label, revenue, profit] buckets.
+function buildChartDataFromSales() {
+  const sales = partnerData.sales || [];
+  const products = partnerData.products || [];
+  if (sales.length === 0) { CHART_DATA = { all: [] }; return; }
+  const prodById = {}; products.forEach(p => { prodById[p.id] = p; });
+
+  // Sort sales by date ascending
+  const sorted = [...sales].sort((a, b) => a.sale_date.localeCompare(b.sale_date));
+
+  // Build weekly buckets keyed by Monday ISO
+  const weekMap = {};
+  sorted.forEach(s => {
+    const d = new Date(s.sale_date + 'T12:00:00');
+    const day = d.getDay(); // 0=Sun
+    const mon = new Date(d); mon.setDate(mon.getDate() - ((day + 6) % 7)); // roll back to Monday
+    const key = mon.toISOString().slice(0, 10);
+    if (!weekMap[key]) weekMap[key] = { rev: 0, profit: 0 };
+    const p = prodById[s.product_id];
+    const u = s.units_sold || 0;
+    const r = parseFloat(s.revenue) || 0;
+    const ads = parseFloat(s.ad_spend) || 0;
+    const refPct = p ? ((p.referral_fee_pct || 15) / 100) : 0.15;
+    const fbaPer = p ? (parseFloat(p.fba_fee_manual) || 0) : 0;
+    const cogsPer = p ? (parseFloat(p.cogs) || 0) : 0;
+    const angoraFee = r * 0.05;
+    const netProfit = r - (r * refPct) - (u * fbaPer) - (u * cogsPer) - ads - angoraFee;
+    weekMap[key].rev += r;
+    weekMap[key].profit += netProfit;
+  });
+
+  const weeks = Object.keys(weekMap).sort();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  CHART_DATA.all = weeks.map(iso => {
+    const d = new Date(iso + 'T12:00:00');
+    const label = months[d.getMonth()] + ' ' + d.getDate();
+    return [label, Math.round(weekMap[iso].rev), Math.round(weekMap[iso].profit)];
+  });
+}
 
 const RANGE_CONFIG = {
   "4w": { weeks: 4, deltas: ["vs last wk", "vs last wk"] },
@@ -701,7 +689,9 @@ function animateChartDot(node, delay = 0) {
 
 function drawChart() {
   const config = RANGE_CONFIG[currentRange];
+  if (!CHART_DATA.all.length) { currentData = []; return; }
   const slice = CHART_DATA.all.slice(-config.weeks);
+  if (slice.length < 2) { currentData = slice; return; }
   currentData = slice;
 
   const width = 300;
@@ -1247,6 +1237,9 @@ window.partnerSwitchAccount = async function(accountId) {
   if (typeof renderPartnerFba === 'function') try { renderPartnerFba(); } catch(e) {}
   if (typeof renderPartnerOrders === 'function') try { renderPartnerOrders(); } catch(e) {}
   if (typeof renderPartnerReports === 'function') try { renderPartnerReports(); } catch(e) {}
+  if (typeof renderPartnerSkuBreakdown === 'function') try { renderPartnerSkuBreakdown(); } catch(e) {}
+  if (typeof renderPartnerReportArchive === 'function') try { renderPartnerReportArchive(); } catch(e) {}
+  if (typeof buildChartDataFromSales === 'function') try { buildChartDataFromSales(); drawChart(); } catch(e) {}
 };
 
 async function partnerLoadAccountData() {
@@ -1296,7 +1289,7 @@ async function partnerLoadAccountData() {
     const productIds = partnerData.products.map(p => p.id);
     const [invRes, salesRes] = await Promise.all([
       sb.from('angora_inventory').select('*').in('product_id', productIds),
-      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('sale_date', new Date(Date.now() - 84*86400000).toISOString().slice(0,10)),
+      sb.from('angora_daily_sales').select('*').in('product_id', productIds).gte('sale_date', new Date(Date.now() - 400*86400000).toISOString().slice(0,10)),
     ]);
     partnerData.inventory = invRes.data || [];
     partnerData.sales = salesRes.data || [];
@@ -1305,11 +1298,16 @@ async function partnerLoadAccountData() {
   const { data: pos } = await sb.from('angora_purchase_orders').select('*').eq('account_id', accountId).order('expected_date', { ascending: true });
   partnerData.purchaseOrders = pos || [];
   partnerData.ready = true;
+  buildChartDataFromSales();
   renderPartnerHome();
   renderPartnerInventory();
   renderPartnerFba();
   renderPartnerOrders();
   renderPartnerReports();
+  renderPartnerSkuBreakdown();
+  renderPartnerReportArchive();
+  // Redraw chart if reports screen is visible
+  try { drawChart(); } catch(e) {}
 }
 
 // ── PARTNER: PURCHASE ORDERS ──────────────────────────────────────────────
@@ -1380,6 +1378,14 @@ function renderPartnerReports() {
   if (!partnerData.ready) return;
   const el = (id) => document.getElementById(id);
   if (!el('rpt-profit')) return;
+  // Update the date subtitle to reflect the actual data range
+  const dateSub = el('rpt-date-sub');
+  if (dateSub && partnerData.sales.length) {
+    const dates = partnerData.sales.map(s => s.sale_date).sort();
+    const latest = new Date(dates[dates.length - 1] + 'T12:00:00');
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    dateSub.textContent = monthNames[latest.getMonth()] + ' ' + latest.getDate() + ', ' + latest.getFullYear();
+  }
   const products = partnerData.products || [];
   const sales = partnerData.sales || [];
   if (products.length === 0 || sales.length === 0) {
@@ -1421,10 +1427,98 @@ function renderPartnerReports() {
 
 function pdSum(arr, key) { return arr.reduce((s, x) => s + (parseFloat(x[key]) || 0), 0); }
 
+// ── PARTNER: DYNAMIC SKU BREAKDOWN (Reports screen) ──────────────────────
+function renderPartnerSkuBreakdown() {
+  const list = document.getElementById('rpt-sku-list');
+  if (!list) return;
+  if (!partnerData.ready || !partnerData.products.length || !partnerData.sales.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">No SKU data yet.</div>';
+    return;
+  }
+  const byId = {}; partnerData.products.forEach(p => { byId[p.id] = p; });
+  const colors = ['var(--green)','var(--blue)','var(--purple2)','var(--orange)','var(--red)'];
+  // Aggregate per product
+  const skuStats = {};
+  partnerData.sales.forEach(s => {
+    const p = byId[s.product_id]; if (!p) return;
+    if (!skuStats[p.id]) skuStats[p.id] = { units: 0, rev: 0, ads: 0, profit: 0, name: p.name || p.sku || 'Product' };
+    const u = s.units_sold || 0; const r = parseFloat(s.revenue) || 0;
+    const ads = parseFloat(s.ad_spend) || 0;
+    const refPct = (p.referral_fee_pct || 15) / 100;
+    const fbaPer = parseFloat(p.fba_fee_manual || 0);
+    const cogsPer = parseFloat(p.cogs || 0);
+    const angoraFee = r * 0.05;
+    const np = r - (r * refPct) - (u * fbaPer) - (u * cogsPer) - ads - angoraFee;
+    skuStats[p.id].units += u;
+    skuStats[p.id].rev += r;
+    skuStats[p.id].ads += ads;
+    skuStats[p.id].profit += np;
+  });
+  const sorted = Object.values(skuStats).sort((a, b) => b.profit - a.profit);
+  list.innerHTML = sorted.map((sk, i) => {
+    const c = colors[i % colors.length];
+    const margin = sk.rev > 0 ? (sk.profit / sk.rev * 100).toFixed(1) : '0.0';
+    const acos = sk.rev > 0 ? (sk.ads / sk.rev * 100).toFixed(1) : '0.0';
+    const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+    return `<div class="sr"><div class="sdot" style="background:${c}"></div><div style="flex:1"><div class="sn">${sk.name.replace(/</g,'&lt;')}</div><div class="sm">${sk.units.toLocaleString()} units  |  ACoS ${acos}%</div></div><div><div class="spro" style="color:${c}">${fmt$(sk.profit)}</div><div class="smgn">${margin}% margin</div></div></div>`;
+  }).join('');
+}
+
+// ── PARTNER: DYNAMIC REPORT ARCHIVE (weekly summaries from sales) ─────────
+function renderPartnerReportArchive() {
+  const container = document.getElementById('rpt-archive-list');
+  if (!container) return;
+  if (!partnerData.ready || !partnerData.sales.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">No report data yet.</div>';
+    return;
+  }
+  // Build weekly summaries
+  const prodById = {}; partnerData.products.forEach(p => { prodById[p.id] = p; });
+  const weekMap = {};
+  partnerData.sales.forEach(s => {
+    const d = new Date(s.sale_date + 'T12:00:00');
+    const day = d.getDay();
+    const mon = new Date(d); mon.setDate(mon.getDate() - ((day + 6) % 7));
+    const key = mon.toISOString().slice(0, 10);
+    if (!weekMap[key]) weekMap[key] = { rev: 0, profit: 0, units: 0 };
+    const p = prodById[s.product_id];
+    const u = s.units_sold || 0; const r = parseFloat(s.revenue) || 0;
+    const ads = parseFloat(s.ad_spend) || 0;
+    const refPct = p ? ((p.referral_fee_pct || 15) / 100) : 0.15;
+    const fbaPer = p ? (parseFloat(p.fba_fee_manual) || 0) : 0;
+    const cogsPer = p ? (parseFloat(p.cogs) || 0) : 0;
+    const np = r - (r * refPct) - (u * fbaPer) - (u * cogsPer) - ads - (r * 0.05);
+    weekMap[key].rev += r; weekMap[key].profit += np; weekMap[key].units += u;
+  });
+  const weeks = Object.keys(weekMap).sort().reverse().slice(0, 12); // last 12 weeks
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  container.innerHTML = weeks.map((iso, i) => {
+    const d = new Date(iso + 'T12:00:00');
+    const label = months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    const wk = weekMap[iso];
+    const margin = wk.rev > 0 ? (wk.profit / wk.rev * 100).toFixed(1) : '0.0';
+    const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+    const isCurrent = i === 0;
+    const pillHtml = isCurrent ? '<span class="pill pb">Current</span>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted2)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+    const bg = isCurrent ? 'background:linear-gradient(135deg,#ffffff,#f8f8f9);' : 'background:var(--surface);';
+    const strokeColor = isCurrent ? 'var(--purple2)' : 'var(--muted)';
+    return `<div style="${bg}border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
+      <div style="width:38px;height:38px;border-radius:11px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">Week of ${label}</div>
+        <div style="font-size:10px;color:var(--muted)">${fmt$(wk.profit)} profit  |  ${margin}% margin</div>
+      </div>
+      ${pillHtml}
+    </div>`;
+  }).join('');
+}
+
 function partnerRunwayDays() {
   // Avg units/day over last 28 days
   const cutoff = Date.now() - 28*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date(s.sale_date).getTime() >= cutoff);
   const totalUnits = pdSum(recent, 'units_sold');
   const avgPerDay = totalUnits / 28;
   if (avgPerDay <= 0) return null;
@@ -1435,7 +1529,7 @@ function partnerRunwayDays() {
 function partnerWeeklyProfit() {
   // Last 7 days: revenue - ads - other_fees - (units * cogs) - (units * fba_fee)
   const cutoff = Date.now() - 7*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date(s.sale_date).getTime() >= cutoff);
   const prodById = {}; partnerData.products.forEach(p => { prodById[p.id] = p; });
   let profit = 0;
   recent.forEach(s => {
@@ -1466,9 +1560,58 @@ function renderPartnerHome() {
     profit.textContent = '$' + Math.round(p).toLocaleString();
   }
   const pos = document.getElementById('home-kpi-pos');
-  if (pos) pos.textContent = '0'; // PO tracking not yet in schema
+  if (pos) {
+    const openPos = (partnerData.purchaseOrders || []).filter(p => !['received','cancelled'].includes(p.po_status));
+    pos.textContent = openPos.length;
+  }
   const updated = document.getElementById('home-updated');
   if (updated) updated.textContent = 'Live  |  Updated ' + new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+
+  // "Your Account" cards — dynamic values
+  const fmt$ = (n) => '$' + Math.round(n).toLocaleString();
+  // Weekly Report card
+  const rptVal = document.getElementById('home-rpt-val');
+  const rptSub = document.getElementById('home-rpt-sub');
+  if (rptVal) { const wp = partnerWeeklyProfit(); rptVal.textContent = fmt$(wp); }
+  if (rptSub) {
+    const skuCount = (partnerData.products || []).length;
+    rptSub.textContent = `This week  |  ${skuCount} SKU${skuCount !== 1 ? 's' : ''}  |  AI summary ready`;
+  }
+  // Inventory card
+  const invVal = document.getElementById('home-inv-val');
+  const invSub = document.getElementById('home-inv-sub');
+  const invPill = document.getElementById('home-inv-pill');
+  if (invVal || invSub) {
+    const totalInv = (partnerData.inventory || []).reduce((s, i) => s + (i.quantity || 0), 0);
+    const runway = partnerRunwayDays();
+    if (invVal) invVal.textContent = totalInv.toLocaleString();
+    if (invSub) invSub.textContent = `Warehouse + FBA  |  ${runway ? runway + ' days runway' : 'no velocity data'}`;
+    if (invPill) {
+      if (runway !== null && runway < 21) { invPill.textContent = 'Low Stock'; invPill.className = 'pill po'; }
+      else { invPill.textContent = 'Healthy'; invPill.className = 'pill pg'; }
+    }
+  }
+  // PO card
+  const poVal = document.getElementById('home-po-val');
+  const poSub = document.getElementById('home-po-sub');
+  const poPill = document.getElementById('home-po-pill');
+  if (poVal || poSub) {
+    const allPos = partnerData.purchaseOrders || [];
+    const openPos = allPos.filter(p => !['received','cancelled'].includes(p.po_status));
+    const inTransit = allPos.filter(p => p.po_status === 'in_transit').length;
+    if (poVal) poVal.textContent = openPos.length + ' open';
+    if (poSub) poSub.textContent = openPos.length > 0 ? `${openPos.length} open  |  ${inTransit} in transit` : 'No open purchase orders';
+    if (poPill) {
+      if (openPos.length === 0) { poPill.textContent = 'None'; poPill.className = 'pill pm'; }
+      else { poPill.textContent = 'On Track'; poPill.className = 'pill pg'; }
+    }
+  }
+  // FBA card
+  const fbaVal = document.getElementById('home-fba-val');
+  if (fbaVal) {
+    const fbaUnits = (partnerData.inventory || []).filter(i => i.location === 'fba').reduce((s, i) => s + (i.quantity || 0), 0);
+    fbaVal.textContent = fbaUnits.toLocaleString();
+  }
 }
 
 function renderPartnerInventory() {
@@ -1510,7 +1653,7 @@ function renderPartnerInventory() {
     if (total === 0) return '';
     // Velocity = avg units/wk
     const sales = partnerData.sales.filter(s => s.product_id === p.id);
-    const recent = sales.filter(s => (Date.now() - new Date(s.date).getTime()) < 84*86400000);
+    const recent = sales.filter(s => (Date.now() - new Date(s.sale_date).getTime()) < 84*86400000);
     const unitsPerWk = pdSum(recent, 'units_sold') / 12;
     const weeksLeft = unitsPerWk > 0 ? total / unitsPerWk : 99;
     let label = 'Healthy', colorVar = 'var(--green)', pillClass = 'pg', pct = 100;
@@ -1539,7 +1682,7 @@ function renderPartnerFba() {
   if (totalEl) totalEl.textContent = fbaTotal.toLocaleString();
   // ACoS = ad_spend / revenue over last 28d
   const cutoff = Date.now() - 28*86400000;
-  const recent = partnerData.sales.filter(s => new Date(s.date).getTime() >= cutoff);
+  const recent = partnerData.sales.filter(s => new Date(s.sale_date).getTime() >= cutoff);
   const rev = pdSum(recent, 'revenue');
   const ads = pdSum(recent, 'ad_spend');
   const acos = rev > 0 ? (ads/rev*100) : 0;
@@ -1561,7 +1704,7 @@ function renderPartnerFba() {
     if (q === 0) return '';
     const nm = (p.name || p.sku || 'Product').replace(/</g,'&lt;');
     // per-sku velocity
-    const sales = partnerData.sales.filter(s => s.product_id === p.id && (Date.now() - new Date(s.date).getTime()) < 28*86400000);
+    const sales = partnerData.sales.filter(s => s.product_id === p.id && (Date.now() - new Date(s.sale_date).getTime()) < 28*86400000);
     const uPerWk = pdSum(sales, 'units_sold') / 4;
     const daysLeft = uPerWk > 0 ? Math.round(q / (uPerWk / 7)) : null;
     const label = daysLeft === null ? 'No data' : (daysLeft < 14 ? 'Low' : (daysLeft < 28 ? 'Watch' : 'Healthy'));
