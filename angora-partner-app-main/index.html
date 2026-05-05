@@ -8,7 +8,7 @@
   <link rel="icon" href="https://framerusercontent.com/images/MoDB9mcqMpblipeUEo9qaCLZzeY.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -78,13 +78,12 @@
   <div class="screen">
 
     <!-- ══════ HOME ══════ -->
-    <div class="ts active" id="screen-home">
+    <div class="ts" id="screen-home">
       <div class="home-hdr">
         <div>
           <div class="home-greeting">Welcome back</div>
           <div class="home-name" id="partner-display-name">Benjamin</div>
           <div class="session-row">
-            <span class="session-chip">Demo Session</span>
             <button class="session-link" id="demo-signout" type="button">Sign out</button>
           </div>
         </div>
@@ -164,7 +163,7 @@
       <div class="alist">
         <div class="ar green" onclick="switchTab('reports')">
           <div class="aico" style="background:rgba(10,10,10,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-          <div class="abody"><div class="aname">Weekly Report</div><div class="asub" id="home-rpt-sub">—</div></div>
+          <div class="abody"><div class="aname">Account Report</div><div class="asub" id="home-rpt-sub">—</div></div>
           <div class="aright"><div class="aval" style="color:var(--green)" id="home-rpt-val">—</div><span class="pill pb">New</span></div>
           <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
         </div>
@@ -191,8 +190,8 @@
     </div>
 
     <!-- ══════ REPORTS ══════ -->
-    <div class="ts" id="screen-reports">
-      <div class="ph"><div class="back" onclick="switchTab('home')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><div class="ptitle" id="rpt-page-title">Weekly Report</div><div class="psub" id="rpt-page-sub">—</div></div>
+    <div class="ts active" id="screen-reports">
+      <div class="ph"><div class="ptitle" id="rpt-page-title">Account Report</div><div class="psub" id="rpt-page-sub">—</div></div>
 
       <!-- Profit hero -->
       <div class="profit-hero">
@@ -248,12 +247,12 @@
             onmousemove="chartHover(event)" onmouseleave="chartLeave()">
             <defs>
               <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#0A0A0A" stop-opacity="0.28"/>
-                <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+                <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28"/>
+                <stop offset="100%" stop-color="#2563eb" stop-opacity="0"/>
               </linearGradient>
               <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#0A0A0A" stop-opacity="0.22"/>
-                <stop offset="100%" stop-color="#0A0A0A" stop-opacity="0"/>
+                <stop offset="0%" stop-color="#059669" stop-opacity="0.22"/>
+                <stop offset="100%" stop-color="#059669" stop-opacity="0"/>
               </linearGradient>
             </defs>
             <!-- Y gridlines -->
@@ -263,18 +262,18 @@
             <line x1="0" y1="90" x2="300" y2="90" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
             <!-- Revenue fill + line -->
             <path id="rev-area" fill="url(#gr)" opacity="0.7"/>
-            <path id="rev-line" fill="none" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="rev-line" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <!-- Profit fill + line -->
             <path id="pro-area" fill="url(#gp)" opacity="0.7"/>
-            <path id="pro-line" fill="none" stroke="#0A0A0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="pro-line" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <!-- Hover crosshair -->
             <line id="crosshair" x1="0" y1="0" x2="0" y2="90" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="3,3" display="none"/>
             <!-- Hover dots -->
-            <circle id="hover-rev-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2" display="none"/>
-            <circle id="hover-pro-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2" display="none"/>
+            <circle id="hover-rev-dot" r="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2" display="none"/>
+            <circle id="hover-pro-dot" r="4" fill="#059669" stroke="#047857" stroke-width="2" display="none"/>
             <!-- End dots -->
-            <circle id="end-rev-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2"/>
-            <circle id="end-pro-dot" r="4" fill="#0A0A0A" stroke="#0e0c1a" stroke-width="2"/>
+            <circle id="end-rev-dot" r="4" fill="#2563eb" stroke="#1d4ed8" stroke-width="2"/>
+            <circle id="end-pro-dot" r="4" fill="#059669" stroke="#047857" stroke-width="2"/>
           </svg>
         </div>
 
@@ -379,7 +378,7 @@
     <div class="ts" id="screen-conv">
       <style>
         .conv-hdr{display:flex;align-items:center;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
-        .conv-hdr-av{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#6b4fcc,#0A0A0A);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;font-weight:800;color:#fff;flex-shrink:0;position:relative}
+        .conv-hdr-av{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:12px;font-weight:800;color:#fff;flex-shrink:0;position:relative}
         .conv-hdr-online{position:absolute;bottom:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:var(--green);border:2px solid var(--bg);box-shadow:0 0 6px var(--green)}
         .conv-hdr-info{flex:1}
         .conv-hdr-name{font-family:var(--display);font-size:14px;font-weight:700;color:var(--text)}
@@ -390,7 +389,7 @@
         .msg-av{width:28px;height:28px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff}
         .bubble{max-width:72%;padding:11px 14px;border-radius:16px;font-size:12px;line-height:1.6}
         .bubble.them{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px}
-        .bubble.me{background:linear-gradient(135deg,#6b4fcc,#0A0A0A);color:#fff;border-bottom-right-radius:4px}
+        .bubble.me{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-bottom-right-radius:4px}
         .msg-time{font-size:9px;color:var(--muted);text-align:center;margin:4px 0}
         .conv-input-bar{padding:12px 22px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
         .conv-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:22px;padding:10px 16px;font-size:12px;color:var(--text);outline:none;font-family:var(--sans)}
@@ -425,7 +424,7 @@
     <div class="ts" id="screen-report-detail">
       <div class="ph">
         <div class="back" onclick="switchTab('reports')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div>
-        <div class="ptitle" id="rd-title">Weekly Report</div>
+        <div class="ptitle" id="rd-title">Account Report</div>
         <div class="psub" id="rd-date"> - </div>
       </div>
 
@@ -474,17 +473,17 @@
 
   </div><!-- /screen -->
   <div class="tbar">
-    <div class="ti active" id="tab-home" onclick="switchTab('home')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/></svg>
-      <span class="tl">Home</span>
-    </div>
-    <div class="ti" id="tab-reports" onclick="switchTab('reports')">
+    <div class="ti active" id="tab-reports" onclick="switchTab('reports')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       <span class="tl">Reports</span>
     </div>
     <div class="ti" id="tab-inventory" onclick="switchTab('inventory')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
       <span class="tl">Inventory</span>
+    </div>
+    <div class="ti" id="tab-home" onclick="switchTab('home')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 9.5L12 3l9 6.5V21H3V9.5z"/></svg>
+      <span class="tl">Home</span>
     </div>
     <div class="ti" id="tab-orders" onclick="switchTab('orders')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
