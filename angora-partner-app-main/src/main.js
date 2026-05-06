@@ -1143,6 +1143,9 @@ async function partnerLoadAccountData() {
     ]);
     partnerData.inventory = invRes.data || [];
     partnerData.sales = salesRes.data || [];
+  } else {
+    partnerData.inventory = [];
+    partnerData.sales = [];
   }
   // Purchase Orders for this account
   const { data: pos } = await sb.from('angora_purchase_orders').select('*').eq('account_id', accountId).order('expected_date', { ascending: true });
