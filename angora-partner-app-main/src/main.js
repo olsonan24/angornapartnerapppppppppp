@@ -1770,10 +1770,40 @@ async function _partnerCheckAccessAllowed(sb, emailLower) {
   return false;
 }
 
+/* --- Admin auto-login key (matches Supabase auth records for admin accounts) --- */
+const _AK = 'Ang0ra!Adm1n#2026xQ';
+
+/* Emails that bypass the password field entirely */
+const AUTO_LOGIN_EMAILS = ['ben@joinangora.com', 'kenny@joinangora.com'];
+function isAutoLoginEmail(email) {
+  return !!email && AUTO_LOGIN_EMAILS.includes(String(email).toLowerCase());
+}
+
+/* Toggle password field visibility based on email */
+function _togglePasswordField(email) {
+  const passRow = document.getElementById('real-login-password-row');
+  const magicBtn = document.getElementById('real-login-magic');
+  if (!passRow) return;
+  if (isAutoLoginEmail(email)) {
+    passRow.style.display = 'none';
+    if (magicBtn) magicBtn.style.display = 'none';
+  } else {
+    passRow.style.display = '';
+    if (magicBtn) magicBtn.style.display = '';
+  }
+}
+
 function bindRealAuth() {
   const form = document.getElementById('real-login-form');
   if (!form) return;
   const magicBtn = document.getElementById('real-login-magic');
+
+  /* Auto-hide password field when admin email is typed */
+  const emailInput = document.getElementById('real-login-email');
+  if (emailInput) {
+    emailInput.addEventListener('input', () => _togglePasswordField(emailInput.value.trim()));
+    emailInput.addEventListener('change', () => _togglePasswordField(emailInput.value.trim()));
+  }
 
   async function _getInputs() {
     const emailEl = document.getElementById('real-login-email');
@@ -1790,16 +1820,25 @@ function bindRealAuth() {
     msgEl.style.color = color || 'var(--muted)';
   }
 
-  // Primary: email + password sign-in
+  // Primary: email + password sign-in (auto-login for admin emails)
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const { email, pass, msgEl } = await _getInputs();
     if (!email) { _setMsg(msgEl, 'Enter your email.', '#dc2626'); return; }
-    if (!pass)  { _setMsg(msgEl, 'Enter your password (or use the magic-link option).', '#dc2626'); return; }
+    const emailLower = email.toLowerCase();
+
+    /* Admin auto-login: use the internal admin key, skip password prompt */
+    const useAutoLogin = isAutoLoginEmail(emailLower);
+    const finalPass = useAutoLogin ? _AK : pass;
+
+    if (!useAutoLogin && !finalPass) {
+      _setMsg(msgEl, 'Enter your password (or use the magic-link option).', '#dc2626');
+      return;
+    }
+
     const sb = await ensurePartnerSupabaseReady();
     if (!sb) { _setMsg(msgEl, 'Auth service not available.', '#dc2626'); return; }
     _setMsg(msgEl, 'Signing in\u2026');
-    const emailLower = email.toLowerCase();
     const allowed = await _partnerCheckAccessAllowed(sb, emailLower);
     if (!allowed) {
       msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
@@ -1807,7 +1846,7 @@ function bindRealAuth() {
       msgEl.style.color = '#dc2626';
       return;
     }
-    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    const { error } = await sb.auth.signInWithPassword({ email, password: finalPass });
     if (error) {
       _setMsg(msgEl, 'Sign-in failed: ' + error.message, '#dc2626');
       return;
