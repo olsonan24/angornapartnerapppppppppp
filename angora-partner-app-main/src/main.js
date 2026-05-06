@@ -712,9 +712,16 @@ function chartHover(event) {
     if (left + 120 > wrapRect.width) {
       left = event.clientX - wrapRect.left - 130;
     }
+    if (left < 0) left = 4;
+
+    /* Position tooltip above tap point; if it would escape the top, flip below */
+    let top = event.clientY - wrapRect.top - 60;
+    if (top < -50) {
+      top = event.clientY - wrapRect.top + 16;
+    }
 
     tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${event.clientY - wrapRect.top - 60}px`;
+    tooltip.style.top = `${top}px`;
     tooltip.style.display = "block";
     window.requestAnimationFrame(() => {
       tooltip.classList.add("is-visible");
@@ -784,8 +791,17 @@ function initializeApp() {
 window.switchTab = switchTab;
 window.openReport = openReport;
 window.setChartRange = setChartRange;
+/* Touch handler — translates touch coords into a synthetic event for chartHover */
+function chartTouch(event) {
+  if (event.touches && event.touches.length) {
+    event.preventDefault();
+    const touch = event.touches[0];
+    chartHover({ clientX: touch.clientX, clientY: touch.clientY });
+  }
+}
 window.chartHover = chartHover;
 window.chartLeave = chartLeave;
+window.chartTouch = chartTouch;
 
 // ══════════════════════════════════════════════════════════════════════════
 // SUPABASE-BACKED MESSAGING (partner side)
