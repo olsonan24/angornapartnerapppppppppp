@@ -212,6 +212,17 @@ body.authenticated .login-shell{display:none}
 .pcg{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.22)}
 .pcm{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border)}
 
+/* Metrics dashboard */
+.metrics-dash{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 22px 20px;padding:0}
+.md-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center;position:relative;overflow:hidden}
+.md-hero{border:1px solid rgba(255,255,255,.08);padding:22px 16px;min-height:100px}
+.md-label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px}
+.md-hero .md-label{color:rgba(255,255,255,.6)}
+.md-big{font-family:var(--display);font-size:32px;font-weight:900;letter-spacing:-.04em;color:#fff;line-height:1;margin-bottom:6px}
+.md-sub{font-size:10px;font-weight:500;color:rgba(255,255,255,.45)}
+.md-val{font-family:var(--display);font-size:20px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:4px}
+.md-hint{font-size:8px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
 /* Stats grid */
 .sgrid{display:grid;grid-template-columns:1fr 1fr 1fr;margin:0 22px 20px;background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden}
 .sg{padding:14px 10px;text-align:center;border-right:1px solid var(--border)}
@@ -336,6 +347,8 @@ body.authenticated .login-shell{display:none}
 .login-preview-card,
 .snap-card,
 .profit-hero,
+.metrics-dash,
+.md-card,
 .aicard,
 .qa-btn,
 .ar,
@@ -383,6 +396,7 @@ body.authenticated .login-shell{display:none}
 .nmb .nmlbl{color:#93bbf5!important}
 .nmb .nmsub{color:rgba(255,255,255,.5)!important}
 .sgrid,
+.md-card:not(.md-hero),
 .sr,
 .ar,
 .qa-btn,
