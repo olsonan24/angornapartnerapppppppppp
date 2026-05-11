@@ -44,15 +44,13 @@
         placeholder="your-email@brand.com"
         required>
 
-      <div id="real-login-password-row">
-        <label class="login-simple-label" for="real-login-password">Password</label>
-        <input
-          class="login-simple-input"
-          id="real-login-password"
-          type="password"
-          autocomplete="current-password"
-          placeholder="••••••••">
-      </div>
+      <label class="login-simple-label" for="real-login-password">Password</label>
+      <input
+        class="login-simple-input"
+        id="real-login-password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="••••••••">
 
       <button class="login-simple-primary" type="submit">Sign In</button>
 
@@ -196,17 +194,58 @@
       <div class="ph"><div class="ptitle" id="rpt-page-title">Account Report</div><div class="psub" id="rpt-page-sub">—</div></div>
 
       <!-- Profit hero -->
-      <div class="profit-hero">
-        <div class="pe">Net Profit</div>
-        <div class="pv" id="rpt-profit">—</div>
-        <div class="pchips"><span class="pc pcg" id="rpt-margin">—</span><span class="pc pcm" id="rpt-units">—</span></div>
-      </div>
+      <!-- Core Metrics Dashboard -->
+      <div class="metrics-dash">
+        <!-- Row 1: hero trio -->
+        <div class="md-card md-hero" style="background:linear-gradient(135deg,#0a2e1a 0%,#0d3d22 100%)">
+          <div class="md-label">Revenue</div>
+          <div class="md-big" id="rpt-revenue">—</div>
+          <div class="md-sub" id="rpt-units-sub">—</div>
+        </div>
+        <div class="md-card md-hero" style="background:linear-gradient(135deg,#1a1640 0%,#251d52 100%)">
+          <div class="md-label">Net Profit</div>
+          <div class="md-big" id="rpt-profit">—</div>
+          <div class="md-sub" id="rpt-margin">—</div>
+        </div>
+        <div class="md-card md-hero" style="background:linear-gradient(135deg,#2a1a0a 0%,#3d2510 100%)">
+          <div class="md-label">TACoS</div>
+          <div class="md-big" id="rpt-tacos">—</div>
+          <div class="md-sub" id="rpt-tacos-sub">Ad spend vs total sales</div>
+        </div>
 
-      <!-- Stats row -->
-      <div class="sgrid" style="margin-top:14px">
-        <div class="sg"><div class="sgv" style="color:var(--green)" id="rpt-revenue">—</div><div class="sgl">Revenue</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--red)" id="rpt-fees">—</div><div class="sgl">AMZ Fees</div></div>
-        <div class="sg"><div class="sgv" style="color:var(--purple2)" id="rpt-ads">—</div><div class="sgl">Ad Spend</div></div>
+        <!-- Row 2: secondary metrics -->
+        <div class="md-card">
+          <div class="md-label">Contribution Margin</div>
+          <div class="md-val" id="rpt-contmargin">—</div>
+          <div class="md-hint">Rev − COGS − Fees</div>
+        </div>
+        <div class="md-card">
+          <div class="md-label">Ad Spend</div>
+          <div class="md-val" id="rpt-ads">—</div>
+          <div class="md-hint" id="rpt-ppc-hint">—</div>
+        </div>
+        <div class="md-card">
+          <div class="md-label">AMZ Fees</div>
+          <div class="md-val" id="rpt-fees">—</div>
+          <div class="md-hint" id="rpt-fees-hint">FBA + Referral</div>
+        </div>
+
+        <!-- Row 3: inventory + ops -->
+        <div class="md-card">
+          <div class="md-label">Days of Supply</div>
+          <div class="md-val" id="rpt-dos">—</div>
+          <div class="md-hint" id="rpt-dos-hint">FBA inventory runway</div>
+        </div>
+        <div class="md-card">
+          <div class="md-label">Stockouts</div>
+          <div class="md-val" id="rpt-stockouts">—</div>
+          <div class="md-hint" id="rpt-stockout-hint">SKUs at 0 FBA units</div>
+        </div>
+        <div class="md-card">
+          <div class="md-label">Refund Rate</div>
+          <div class="md-val" id="rpt-refunds">—</div>
+          <div class="md-hint">Coming soon</div>
+        </div>
       </div>
 
       <!-- WoW Trend Chart -->
@@ -229,24 +268,24 @@
           </div>
         </div>
 
-        <!-- SVG chart container -->
-        <div style="position:relative;overflow:visible" id="chart-wrap">
-          <!-- Tooltip (inside chart-wrap so position:absolute is relative to the chart) -->
-          <div id="chart-tooltip" style="display:none;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;position:absolute;pointer-events:none;z-index:50;min-width:110px">
-            <div id="tt-date" style="font-size:9px;color:var(--muted);margin-bottom:4px"></div>
-            <div style="display:flex;gap:6px;align-items:center;margin-bottom:2px">
-              <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
-              <span id="tt-rev" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--green)"></span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <div style="width:6px;height:6px;border-radius:50%;background:var(--purple)"></div>
-              <span id="tt-pro" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--purple2)"></span>
-            </div>
+        <!-- Tooltip -->
+        <div id="chart-tooltip" style="display:none;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;position:absolute;pointer-events:none;z-index:50;min-width:110px">
+          <div id="tt-date" style="font-size:9px;color:var(--muted);margin-bottom:4px"></div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:2px">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--green)"></div>
+            <span id="tt-rev" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--green)"></span>
           </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--purple)"></div>
+            <span id="tt-pro" style="font-family:var(--display);font-size:12px;font-weight:700;color:var(--purple2)"></span>
+          </div>
+        </div>
+
+        <!-- SVG chart container -->
+        <div style="position:relative" id="chart-wrap">
           <svg id="wow-chart" viewBox="0 0 300 90" xmlns="http://www.w3.org/2000/svg"
             style="width:100%;height:90px;overflow:visible;cursor:crosshair"
-            onmousemove="chartHover(event)" onmouseleave="chartLeave()"
-            ontouchstart="chartTouch(event)" ontouchmove="chartTouch(event)" ontouchend="chartLeave()">
+            onmousemove="chartHover(event)" onmouseleave="chartLeave()">
             <defs>
               <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28"/>
