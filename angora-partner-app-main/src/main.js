@@ -61,6 +61,7 @@ const AMBIENT_SURFACE_SELECTOR = [
   ".aicard",
   ".snap-card",
   ".profit-hero",
+  ".md-card",
   ".sg",
   ".sk",
 ].join(", ");
@@ -712,16 +713,9 @@ function chartHover(event) {
     if (left + 120 > wrapRect.width) {
       left = event.clientX - wrapRect.left - 130;
     }
-    if (left < 0) left = 4;
-
-    /* Position tooltip above tap point; if it would escape the top, flip below */
-    let top = event.clientY - wrapRect.top - 60;
-    if (top < -50) {
-      top = event.clientY - wrapRect.top + 16;
-    }
 
     tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
+    tooltip.style.top = `${event.clientY - wrapRect.top - 60}px`;
     tooltip.style.display = "block";
     window.requestAnimationFrame(() => {
       tooltip.classList.add("is-visible");
@@ -791,17 +785,8 @@ function initializeApp() {
 window.switchTab = switchTab;
 window.openReport = openReport;
 window.setChartRange = setChartRange;
-/* Touch handler — translates touch coords into a synthetic event for chartHover */
-function chartTouch(event) {
-  if (event.touches && event.touches.length) {
-    event.preventDefault();
-    const touch = event.touches[0];
-    chartHover({ clientX: touch.clientX, clientY: touch.clientY });
-  }
-}
 window.chartHover = chartHover;
 window.chartLeave = chartLeave;
-window.chartTouch = chartTouch;
 
 // ══════════════════════════════════════════════════════════════════════════
 // SUPABASE-BACKED MESSAGING (partner side)
@@ -1333,13 +1318,68 @@ function renderPartnerReports() {
   });
   const cur = partnerComputeMetrics(salesRecent);
 
-  el('rpt-profit').textContent = fmt$(cur.netProfit);
-  el('rpt-profit').style.color = cur.netProfit >= 0 ? '' : 'var(--red)';
-  el('rpt-margin').textContent = `${cur.margin.toFixed(1)}% margin`;
-  el('rpt-units').textContent = `${cur.units.toLocaleString()} units`;
+  // Hero row
   el('rpt-revenue').textContent = fmt$(cur.rev);
-  el('rpt-fees').textContent = fmt$(cur.fba + cur.referral);
+  if (el('rpt-units-sub')) el('rpt-units-sub').textContent = `${cur.units.toLocaleString()} units sold`;
+  el('rpt-profit').textContent = fmt$(cur.netProfit);
+  el('rpt-profit').style.color = cur.netProfit >= 0 ? '#a5f3c4' : '#fca5a5';
+  if (el('rpt-margin')) el('rpt-margin').textContent = `${cur.margin.toFixed(1)}% margin`;
+
+  // TACoS
+  const tacos = cur.rev > 0 ? (cur.ads / cur.rev * 100) : 0;
+  if (el('rpt-tacos')) {
+    el('rpt-tacos').textContent = cur.rev > 0 ? tacos.toFixed(1) + '%' : '—';
+    el('rpt-tacos').style.color = tacos <= 15 ? '#a5f3c4' : (tacos <= 25 ? '#fde68a' : '#fca5a5');
+  }
+  if (el('rpt-tacos-sub')) el('rpt-tacos-sub').textContent = cur.ads > 0 ? `${fmt$(cur.ads)} spend` : 'No ad spend';
+
+  // Contribution margin (revenue - cogs - fees, before ads & Angora)
+  const contMargin = cur.rev - cur.cogs - cur.fba - cur.referral;
+  const contMarginPct = cur.rev > 0 ? (contMargin / cur.rev * 100) : 0;
+  if (el('rpt-contmargin')) {
+    el('rpt-contmargin').textContent = cur.rev > 0 ? contMarginPct.toFixed(1) + '%' : '—';
+    el('rpt-contmargin').style.color = contMarginPct >= 30 ? 'var(--green)' : (contMarginPct >= 15 ? 'var(--blue)' : 'var(--red)');
+  }
+
+  // Ad spend + PPC efficiency hint
   el('rpt-ads').textContent = fmt$(cur.ads);
+  if (el('rpt-ppc-hint')) {
+    const roas = cur.ads > 0 ? (cur.rev / cur.ads) : 0;
+    el('rpt-ppc-hint').textContent = cur.ads > 0 ? `${roas.toFixed(1)}x ROAS` : 'No spend';
+  }
+
+  // AMZ Fees
+  el('rpt-fees').textContent = fmt$(cur.fba + cur.referral);
+
+  // Inventory: Days of Supply + Stockouts
+  const inv = partnerData.inventory || [];
+  const prods = partnerData.products || [];
+  const fbaByProd = {};
+  inv.filter(i => i.location === 'fba').forEach(i => { fbaByProd[i.product_id] = (fbaByProd[i.product_id]||0) + (i.quantity||0); });
+  const totalFba = Object.values(fbaByProd).reduce((s,v) => s+v, 0);
+  // 28-day sales velocity
+  const cutoff28 = Date.now() - 28*86400000;
+  const recentSales = (partnerData.sales||[]).filter(s => {
+    const t = new Date((s.sale_date||s.date)+'T12:00:00').getTime();
+    return !isNaN(t) && t >= cutoff28;
+  });
+  const totalUnitsRecent = recentSales.reduce((s,r) => s + (parseInt(r.units_sold)||0), 0);
+  const avgDailyUnits = totalUnitsRecent / 28;
+  const daysOfSupply = avgDailyUnits > 0 ? Math.round(totalFba / avgDailyUnits) : null;
+  if (el('rpt-dos')) {
+    el('rpt-dos').textContent = daysOfSupply !== null ? daysOfSupply + ' days' : (totalFba > 0 ? '∞' : '—');
+    el('rpt-dos').style.color = daysOfSupply === null ? 'var(--muted)' : (daysOfSupply < 21 ? 'var(--red)' : (daysOfSupply < 45 ? 'var(--blue)' : 'var(--green)'));
+  }
+  if (el('rpt-dos-hint')) el('rpt-dos-hint').textContent = totalFba > 0 ? `${totalFba.toLocaleString()} FBA units` : 'No FBA inventory';
+
+  // Stockouts: count SKUs with 0 FBA units
+  const skusWithFba = new Set(Object.keys(fbaByProd).filter(k => fbaByProd[k] > 0));
+  const oosSkus = prods.filter(p => !skusWithFba.has(p.id));
+  if (el('rpt-stockouts')) {
+    el('rpt-stockouts').textContent = prods.length > 0 ? `${oosSkus.length} / ${prods.length}` : '—';
+    el('rpt-stockouts').style.color = oosSkus.length === 0 ? 'var(--green)' : (oosSkus.length <= 2 ? 'var(--blue)' : 'var(--red)');
+  }
+  if (el('rpt-stockout-hint')) el('rpt-stockout-hint').textContent = oosSkus.length === 0 ? 'All SKUs stocked' : `${oosSkus.length} SKU${oosSkus.length>1?'s':''} at 0 units`;
 
   // Header title + subtitle
   const now = new Date();
@@ -1770,40 +1810,10 @@ async function _partnerCheckAccessAllowed(sb, emailLower) {
   return false;
 }
 
-/* --- Admin auto-login key (matches Supabase auth records for admin accounts) --- */
-const _AK = 'Ang0ra!Adm1n#2026xQ';
-
-/* Emails that bypass the password field entirely */
-const AUTO_LOGIN_EMAILS = ['ben@joinangora.com', 'kenny@joinangora.com'];
-function isAutoLoginEmail(email) {
-  return !!email && AUTO_LOGIN_EMAILS.includes(String(email).toLowerCase());
-}
-
-/* Toggle password field visibility based on email */
-function _togglePasswordField(email) {
-  const passRow = document.getElementById('real-login-password-row');
-  const magicBtn = document.getElementById('real-login-magic');
-  if (!passRow) return;
-  if (isAutoLoginEmail(email)) {
-    passRow.style.display = 'none';
-    if (magicBtn) magicBtn.style.display = 'none';
-  } else {
-    passRow.style.display = '';
-    if (magicBtn) magicBtn.style.display = '';
-  }
-}
-
 function bindRealAuth() {
   const form = document.getElementById('real-login-form');
   if (!form) return;
   const magicBtn = document.getElementById('real-login-magic');
-
-  /* Auto-hide password field when admin email is typed */
-  const emailInput = document.getElementById('real-login-email');
-  if (emailInput) {
-    emailInput.addEventListener('input', () => _togglePasswordField(emailInput.value.trim()));
-    emailInput.addEventListener('change', () => _togglePasswordField(emailInput.value.trim()));
-  }
 
   async function _getInputs() {
     const emailEl = document.getElementById('real-login-email');
@@ -1820,25 +1830,16 @@ function bindRealAuth() {
     msgEl.style.color = color || 'var(--muted)';
   }
 
-  // Primary: email + password sign-in (auto-login for admin emails)
+  // Primary: email + password sign-in
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const { email, pass, msgEl } = await _getInputs();
     if (!email) { _setMsg(msgEl, 'Enter your email.', '#dc2626'); return; }
-    const emailLower = email.toLowerCase();
-
-    /* Admin auto-login: use the internal admin key, skip password prompt */
-    const useAutoLogin = isAutoLoginEmail(emailLower);
-    const finalPass = useAutoLogin ? _AK : pass;
-
-    if (!useAutoLogin && !finalPass) {
-      _setMsg(msgEl, 'Enter your password (or use the magic-link option).', '#dc2626');
-      return;
-    }
-
+    if (!pass)  { _setMsg(msgEl, 'Enter your password (or use the magic-link option).', '#dc2626'); return; }
     const sb = await ensurePartnerSupabaseReady();
     if (!sb) { _setMsg(msgEl, 'Auth service not available.', '#dc2626'); return; }
     _setMsg(msgEl, 'Signing in\u2026');
+    const emailLower = email.toLowerCase();
     const allowed = await _partnerCheckAccessAllowed(sb, emailLower);
     if (!allowed) {
       msgEl.innerHTML = 'This email isn\u2019t on file for any Angora account yet.<br>' +
@@ -1846,7 +1847,7 @@ function bindRealAuth() {
       msgEl.style.color = '#dc2626';
       return;
     }
-    const { error } = await sb.auth.signInWithPassword({ email, password: finalPass });
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) {
       _setMsg(msgEl, 'Sign-in failed: ' + error.message, '#dc2626');
       return;
