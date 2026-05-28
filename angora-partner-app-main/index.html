@@ -10,20 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // Initialize Supabase client (same project as Garden)
-    window.ANGORA_SUPABASE_URL = "https://temzkjhkqnrtdwxckioy.supabase.co";
-    // Must match the Garden's publishable key (js/auth.js). The previous
-    // hardcoded JWT anon key had been rotated in Supabase, causing every
-    // REST/auth call to fail with "Invalid API key".
-    window.ANGORA_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbXpramhrcW5ydGR3eGNraW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTI1MzUsImV4cCI6MjA4ODg2ODUzNX0.uySYvPU7AzazoR6Wjf30tbTUW22COhgRhZr2qmpAPFU";
-    window.addEventListener("DOMContentLoaded", () => {
-      if (window.supabase) {
-        window.angoraSupabase = window.supabase.createClient(window.ANGORA_SUPABASE_URL, window.ANGORA_SUPABASE_ANON_KEY);
-      }
-    });
-  </script>
+  <!-- Supabase is bundled via Vite (import in main.js), no CDN needed -->
 </head>
 <body>
 <div class="login-shell" id="login-shell">
