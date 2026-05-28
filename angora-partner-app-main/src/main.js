@@ -1,3 +1,12 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client (bundled, not CDN — avoids tracking prevention blocks)
+const ANGORA_SUPABASE_URL = "https://temzkjhkqnrtdwxckioy.supabase.co";
+const ANGORA_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRlbXpramhrcW5ydGR3eGNraW95Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyOTI1MzUsImV4cCI6MjA4ODg2ODUzNX0.uySYvPU7AzazoR6Wjf30tbTUW22COhgRhZr2qmpAPFU";
+window.angoraSupabase = createClient(ANGORA_SUPABASE_URL, ANGORA_SUPABASE_ANON_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+});
+
 const SCREENS = {
   home: "home",
   reports: "reports",
@@ -826,7 +835,6 @@ async function partnerCheckSession() {
 }
 
 async function partnerLoadThreads() {
-  const sb = partnerSupabase(); if (!sb) { partnerMsg.ready = true; renderPartnerMessagesList(); return; }
   // Scope: if we already picked a specific account (e.g. admin chose one from
   // the switcher), scope threads to JUST that account. Otherwise resolve via
   // partner_access grants + contact_email match.
@@ -859,7 +867,7 @@ async function partnerLoadThreads() {
   const byId = {}; (accounts || []).forEach(a => { byId[a.id] = a; });
   partnerMsg.accountsById = byId;
 
-  const { data: threadsRaw } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
+  const { data: threadsRaw, error: threadsErr } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
   // Filter: only show threads that have at least one message authored by a
   // verified Garden PSM (sender_type = 'garden'). Partners should not see
   // empty threads or threads where only they have posted.
@@ -1836,9 +1844,12 @@ async function partnerRealLogin(session) {
   // IMPORTANT: load account data FIRST so partnerData.accountId is set before
   // partnerLoadThreads runs. Otherwise admin sessions (ben@/alex@) would
   // pull EVERY account's threads instead of just the active one.
-  await partnerLoadAccountData();
-  await partnerLoadThreads();
-  renderPartnerMessagesList();
+  try {
+    await partnerLoadAccountData();
+    await partnerLoadThreads();
+    renderPartnerMessagesList();
+  } catch(err) {
+  }
 }
 
 async function _partnerCheckAccessAllowed(sb, emailLower) {
