@@ -1153,8 +1153,14 @@ window.partnerOpenContact = async function(contactKey) {
     alert('Your account hasn\u2019t been set up yet. Please ask your PSM to add your email.');
     return;
   }
-  const { data: userRes } = await sb.auth.getUser();
-  const userId = userRes?.user?.id || null;
+  const { data: sessionRes } = await sb.auth.getSession();
+  const userId = sessionRes?.session?.user?.id || null;
+  if (!userId) {
+    saveState({ authenticated: false });
+    setAuthenticatedView(false);
+    alert('Please sign in again before starting a Partner conversation.');
+    return;
+  }
   const acctName = partnerData.account?.name || 'Partner';
   const subject = `${ct.subjectTag} ${acctName} \u2014 ${ct.deptLabel}`;
   const { data: newThread, error: tErr } = await sb.from('angora_message_threads').insert({
@@ -1351,9 +1357,16 @@ window.partnerStartNewMessage = async function() {
     alert('Your account hasn\u2019t been set up yet. Please ask your PSM to add your email in the Angora dashboard.');
     return;
   }
-  // Create a thread
-  const { data: userRes } = await sb.auth.getUser();
-  const userId = userRes && userRes.user ? userRes.user.id : null;
+  // Create a thread only when a real Supabase session exists. Otherwise the
+  // click looked dead/stale because RLS correctly rejects anonymous inserts.
+  const { data: sessionRes } = await sb.auth.getSession();
+  const userId = sessionRes?.session?.user?.id || null;
+  if (!userId) {
+    saveState({ authenticated: false });
+    setAuthenticatedView(false);
+    alert('Please sign in again before starting a Partner conversation.');
+    return;
+  }
   const { data: newThread, error: tErr } = await sb.from('angora_message_threads').insert({
     account_id: accountId,
     subject: 'Partner conversation',
@@ -1392,6 +1405,8 @@ window.sendPartnerMessage = async function() {
     console.warn('sendPartnerMessage auth check failed:', err);
   }
   if (!userId) {
+    saveState({ authenticated: false });
+    setAuthenticatedView(false);
     alert('Please sign in again before sending a Partner message.');
     return;
   }
@@ -2315,7 +2330,11 @@ function bindRealAuth() {
   if (session) {
     await partnerRealLogin(session);
   } else {
-    // Still prime the messages subtitle etc for demo mode
+    // If a browser has old demo/local auth state but no real Supabase session,
+    // force it back to the login screen instead of showing a UI where message
+    // clicks appear to do nothing.
+    saveState({ authenticated: false });
+    setAuthenticatedView(false);
     renderPartnerMessagesList();
   }
   // React to auth state changes (e.g. after magic link)
