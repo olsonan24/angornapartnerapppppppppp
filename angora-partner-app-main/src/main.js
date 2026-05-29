@@ -835,6 +835,7 @@ async function partnerCheckSession() {
 }
 
 async function partnerLoadThreads() {
+  const sb = partnerSupabase(); if (!sb) { partnerMsg.ready = true; renderPartnerMessagesList(); return; }
   // Scope: if we already picked a specific account (e.g. admin chose one from
   // the switcher), scope threads to JUST that account. Otherwise resolve via
   // partner_access grants + contact_email match.
