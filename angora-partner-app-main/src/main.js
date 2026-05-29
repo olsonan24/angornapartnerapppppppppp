@@ -864,7 +864,7 @@ async function partnerLoadThreads() {
     renderPartnerMessagesList();
     return;
   }
-  const { data: accounts } = await sb.from('angora_accounts').select('id, name').in('id', accountIds);
+  const { data: accounts } = await sb.from('angora_accounts').select('id, name, psm_name, psm_email, ops_specialist').in('id', accountIds);
   const byId = {}; (accounts || []).forEach(a => { byId[a.id] = a; });
   partnerMsg.accountsById = byId;
 
@@ -916,16 +916,108 @@ function parseDeptFromSubject(subject) {
   return m ? m[1].toLowerCase() : 'general';
 }
 
+// ═══ 3-Contact Routing ═══
+const CONTACT_TYPES = [
+  { key: 'psm', label: 'Your PSM', icon: 'psm', subjectTag: '[ppc]', deptLabel: 'PPC Strategy' },
+  { key: 'onboarding', label: 'Onboarding Specialist', icon: 'onboarding', subjectTag: '[account]', deptLabel: 'Account Mgmt' },
+  { key: 'product', label: 'Product Team', icon: 'product', subjectTag: '[general]', deptLabel: 'General' },
+];
+
+function getContactName(acct, contactKey) {
+  if (!acct) return 'Angora Team';
+  if (contactKey === 'psm') return acct.psm_name || 'Your PSM';
+  if (contactKey === 'onboarding') return acct.ops_specialist || 'Onboarding';
+  return 'Product Team';
+}
+
+function findThreadForContact(contactKey) {
+  // Match thread by subject tag
+  const ct = CONTACT_TYPES.find(c => c.key === contactKey);
+  if (!ct) return null;
+  return partnerMsg.threads.find(t => {
+    const dept = parseDeptFromSubject(t.subject);
+    if (contactKey === 'psm') return dept === 'ppc';
+    if (contactKey === 'onboarding') return dept === 'account';
+    return dept === 'general' || !t.subject?.match(/^\[/);
+  });
+}
+
+function renderPartnerContacts() {
+  const container = document.getElementById('messages-contacts-list');
+  if (!container) return;
+
+  // Get account data for contact names
+  const acct = partnerData.account || null;
+
+  container.innerHTML = '<div class="contact-cards">' + CONTACT_TYPES.map(ct => {
+    const name = getContactName(acct, ct.key);
+    const existingThread = findThreadForContact(ct.key);
+    const preview = existingThread?.lastMsg ? existingThread.lastMsg.content.slice(0, 50) : 'Tap to start a conversation';
+    const hasUnread = existingThread?.lastMsg?.sender_type === 'garden';
+    const escaped = (name || '').replace(/</g, '&lt;');
+    const previewEscaped = (preview || '').replace(/</g, '&lt;');
+    return `<div class="contact-card" data-contact="${ct.key}" onclick="window.partnerOpenContact('${ct.key}')">
+      <div class="cc-av ${ct.icon}">${initials(name)}</div>
+      <div class="cc-info">
+        <div class="cc-name">${escaped}</div>
+        <div class="cc-role">${ct.deptLabel}</div>
+        <div class="cc-preview">${previewEscaped}</div>
+      </div>
+      ${hasUnread ? '<div class="cc-badge"></div>' : ''}
+    </div>`;
+  }).join('') + '</div>';
+}
+
+window.partnerOpenContact = async function(contactKey) {
+  const sb = partnerSupabase(); if (!sb) return;
+  // Ensure data is loaded
+  if (!partnerMsg.ready) { try { await partnerLoadThreads(); } catch(e) { console.warn(e); } }
+  if (!partnerData.ready) { try { await partnerLoadAccountData(); } catch(e) { console.warn(e); } }
+
+  // Check for existing thread for this contact type
+  const existing = findThreadForContact(contactKey);
+  if (existing) {
+    return partnerOpenConv(existing.id);
+  }
+
+  // Create new thread with dept tag
+  const ct = CONTACT_TYPES.find(c => c.key === contactKey);
+  const accountId = partnerData.accountId || (partnerMsg.threads[0]?.account_id);
+  if (!accountId) {
+    alert('Your account hasn\u2019t been set up yet. Please ask your PSM to add your email.');
+    return;
+  }
+  const { data: userRes } = await sb.auth.getUser();
+  const userId = userRes?.user?.id || null;
+  const acctName = partnerData.account?.name || 'Partner';
+  const subject = `${ct.subjectTag} ${acctName} \u2014 ${ct.deptLabel}`;
+  const { data: newThread, error: tErr } = await sb.from('angora_message_threads').insert({
+    account_id: accountId,
+    subject: subject,
+    created_by: userId,
+  }).select('id, account_id, subject, updated_at').single();
+  if (tErr) { alert('Could not start conversation: ' + tErr.message); return; }
+  const acct = partnerMsg.accountsById[accountId] || partnerData.account || { id: accountId, name: acctName };
+  partnerMsg.accountsById[accountId] = acct;
+  partnerMsg.threads.unshift({ ...newThread, lastMsg: null, account: acct });
+  renderPartnerMessagesList();
+  await partnerOpenConv(newThread.id);
+};
+
 function renderPartnerMessagesList() {
   const list = document.getElementById('messages-conv-list');
   const sub = document.getElementById('messages-subtitle');
   if (!list) return;
+
+  // Always render contacts section
+  renderPartnerContacts();
+
   if (!partnerMsg.ready) {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:11px">Loading\u2026</div>';
     return;
   }
   if (partnerMsg.threads.length === 0) {
-    list.innerHTML = '<div style="padding:30px 16px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6">No conversations yet.<br><br>Your Angora team will start messaging you here.</div>';
+    list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px;line-height:1.6">No messages yet. Tap a contact above to start.</div>';
     if (sub) sub.textContent = 'Your Angora team';
     return;
   }
@@ -962,10 +1054,25 @@ async function partnerOpenConv(threadId) {
   const hdrStatus = document.getElementById('conv-hdr-status');
   const input = document.getElementById('conv-input');
   if (t) {
-    if (hdrName) hdrName.textContent = `Angora \u00b7 ${t.account?.name || 'Team'}`;
-    if (hdrAv) hdrAv.firstChild && (hdrAv.firstChild.textContent = initials(t.account?.name || 'A'));
-    if (hdrStatus) hdrStatus.textContent = '\u25cf Secure channel';
-    if (input) input.placeholder = `Message your Angora team\u2026`;
+    // Show contact-specific header based on thread department
+    const dept = parseDeptFromSubject(t.subject);
+    let contactName = 'Angora Team';
+    let contactRole = 'Secure channel';
+    const acct = t.account || partnerData.account;
+    if (dept === 'ppc') {
+      contactName = acct?.psm_name || 'Your PSM';
+      contactRole = 'PPC Strategy';
+    } else if (dept === 'account') {
+      contactName = acct?.ops_specialist || 'Onboarding';
+      contactRole = 'Account Mgmt';
+    } else {
+      contactName = 'Product Team';
+      contactRole = 'General';
+    }
+    if (hdrName) hdrName.textContent = contactName;
+    if (hdrAv) hdrAv.firstChild && (hdrAv.firstChild.textContent = initials(contactName));
+    if (hdrStatus) hdrStatus.textContent = `\u25cf ${contactRole}`;
+    if (input) input.placeholder = `Message ${contactName}\u2026`;
   }
   switchTab('conv');
 
@@ -1151,7 +1258,7 @@ async function partnerLoadAccountData() {
   const pick = (saved && allAccounts.find(a => a.id === saved)) ? saved : allAccounts[0].id;
   const accountId = pick;
   partnerData.accountId = accountId;
-  const { data: account } = await sb.from('angora_accounts').select('id, name, status').eq('id', accountId).single();
+  const { data: account } = await sb.from('angora_accounts').select('id, name, status, psm_name, psm_email, ops_specialist').eq('id', accountId).single();
   partnerData.account = account;
   const { data: products } = await sb.from('angora_products').select('*').eq('account_id', accountId);
   partnerData.products = products || [];
