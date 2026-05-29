@@ -805,6 +805,10 @@ const partnerMsg = {
   activeThreadId: null,
   msgChannel: null,
   inboxChannel: null,
+  activePollTimer: null,
+  inboxPollTimer: null,
+  seenMsgKeys: new Set(),
+  pendingLocal: [],
   accountsById: {},
   ready: false,
 };
@@ -817,6 +821,19 @@ function isAdminEmail(email) {
 }
 
 function partnerSupabase() { return window.angoraSupabase || null; }
+
+function partnerMsgKey(m) {
+  return m?.id || `${m?.thread_id || partnerMsg.activeThreadId || 'thread'}-${m?.created_at || ''}-${m?.sender_type || ''}-${(m?.content || '').slice(0, 80)}`;
+}
+function partnerRememberMessages(msgs) {
+  (msgs || []).forEach(m => partnerMsg.seenMsgKeys.add(partnerMsgKey(m)));
+}
+function partnerQueryWithTimeout(query, ms = 8000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    query.then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
+  });
+}
 
 async function ensurePartnerSupabaseReady() {
   // Wait up to 3s for the library to load
@@ -895,6 +912,7 @@ async function partnerLoadThreads() {
   partnerMsg.threads = threads.map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
   partnerMsg.ready = true;
   checkUnreadBadge();
+  startPartnerInboxPolling();
 
   // Global realtime for inbox list updates
   try {
@@ -932,6 +950,71 @@ function updateMsgBadge(show) {
 function checkUnreadBadge() {
   const hasUnread = partnerMsg.threads.some(t => t.lastMsg?.sender_type === 'garden');
   updateMsgBadge(hasUnread);
+}
+
+function applyPartnerIncomingMessage(m, appendToOpen = true) {
+  if (!m || !m.thread_id) return false;
+  const t = partnerMsg.threads.find(x => x.id === m.thread_id);
+  if (t) {
+    t.lastMsg = { content: m.content, sender_type: m.sender_type, created_at: m.created_at, id: m.id, thread_id: m.thread_id };
+    t.updated_at = m.created_at;
+    partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+  }
+  if (appendToOpen && partnerMsg.activeThreadId === m.thread_id) partnerConvAppend(m);
+  renderPartnerMessagesList();
+  if (m.sender_type === 'garden') updateMsgBadge(true);
+  return true;
+}
+
+function startPartnerInboxPolling() {
+  const sb = partnerSupabase();
+  if (!sb) return;
+  if (partnerMsg.inboxPollTimer) clearInterval(partnerMsg.inboxPollTimer);
+  async function pollInboxLatest() {
+    try {
+      const threads = (partnerMsg.threads || []).slice(0, 50);
+      await Promise.all(threads.map(async (t) => {
+        const res = await partnerQueryWithTimeout(
+          sb.from('angora_messages')
+            .select('id, thread_id, sender_id, sender_type, content, created_at')
+            .eq('thread_id', t.id)
+            .order('created_at', { ascending: false })
+            .limit(1),
+          6000
+        );
+        const m = res?.data?.[0];
+        if (!m) return;
+        const currentKey = partnerMsgKey(t.lastMsg ? { ...t.lastMsg, thread_id: t.id } : null);
+        if (partnerMsgKey(m) !== currentKey) applyPartnerIncomingMessage(m, false);
+      }));
+    } catch(e) { console.warn('partner inbox poll skipped', e); }
+  }
+  partnerMsg.inboxPollTimer = setInterval(pollInboxLatest, 6000);
+}
+
+function startPartnerConvPolling(threadId) {
+  const sb = partnerSupabase();
+  if (!sb) return;
+  if (partnerMsg.activePollTimer) clearInterval(partnerMsg.activePollTimer);
+  async function pollConversation() {
+    if (partnerMsg.activeThreadId !== threadId) return;
+    try {
+      const res = await partnerQueryWithTimeout(
+        sb.from('angora_messages')
+          .select('id, thread_id, sender_id, sender_type, content, created_at')
+          .eq('thread_id', threadId)
+          .order('created_at', { ascending: false })
+          .limit(25),
+        6000
+      );
+      const msgs = (res?.data || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+      msgs.forEach(m => {
+        if (!partnerMsg.seenMsgKeys.has(partnerMsgKey(m))) applyPartnerIncomingMessage(m, true);
+      });
+    } catch(e) { console.warn('partner conv poll skipped', e); }
+  }
+  partnerMsg.activePollTimer = setInterval(pollConversation, 2500);
+  setTimeout(pollConversation, 600);
 }
 
 // Department helpers (mirrors Garden convention)
@@ -1111,6 +1194,7 @@ async function partnerOpenConv(threadId) {
   const cachedLast = t?.lastMsg ? { ...t.lastMsg, thread_id: threadId } : null;
   if (list) {
     if (cachedLast) {
+      partnerRememberMessages([cachedLast]);
       list.innerHTML = msgsWithUniqueIds([cachedLast]).map(partnerBubbleHtml).join('');
       list.scrollTop = list.scrollHeight;
     } else {
@@ -1124,6 +1208,7 @@ async function partnerOpenConv(threadId) {
 
   function renderMsgs(rawMsgs) {
     const msgs = msgsWithUniqueIds(rawMsgs || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    partnerRememberMessages(msgs);
     if (!list) return;
     if (msgs.length === 0) {
       list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
@@ -1159,6 +1244,7 @@ async function partnerOpenConv(threadId) {
       partnerConvAppend(payload.new);
     }).subscribe();
   } catch(e) { console.warn('conv subscribe err', e); }
+  startPartnerConvPolling(threadId);
 }
 
 function msgsWithUniqueIds(msgs) {
@@ -1181,7 +1267,18 @@ function partnerBubbleHtml(m) {
 
 function partnerConvAppend(m) {
   const list = document.getElementById('conv-msg-list');
-  if (!list) return;
+  if (!list || !m) return;
+  const key = partnerMsgKey(m);
+  if (partnerMsg.seenMsgKeys.has(key)) return;
+  const pendingIdx = partnerMsg.pendingLocal.findIndex(p => p.threadId === m.thread_id && p.sender_type === m.sender_type && p.content === m.content && (Date.now() - p.at) < 60000);
+  if (pendingIdx >= 0) {
+    partnerMsg.pendingLocal.splice(pendingIdx, 1);
+    partnerMsg.seenMsgKeys.add(key);
+    return;
+  }
+  partnerMsg.seenMsgKeys.add(key);
+  const empty = list.querySelector('[style*="text-align:center"]');
+  if (empty) list.innerHTML = '';
   const div = document.createElement('div');
   div.innerHTML = partnerBubbleHtml(m);
   list.appendChild(div.firstChild);
@@ -1245,6 +1342,7 @@ window.sendPartnerMessage = async function() {
     list.insertAdjacentHTML('beforeend', partnerBubbleHtml(tempMsg));
     list.scrollTop = list.scrollHeight;
   }
+  partnerMsg.pendingLocal.push({ threadId, sender_type: 'partner', content, at: Date.now() });
   input.value = '';
   // Actually send to DB
   try {
