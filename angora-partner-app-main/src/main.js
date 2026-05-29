@@ -812,6 +812,9 @@ const partnerMsg = {
   accountsById: {},
   ready: false,
 };
+const PARTNER_MSG_HISTORY_LIMIT = 100;
+const PARTNER_MSG_LATEST_LIMIT = 25;
+let partnerThreadReloadTimer = null;
 
 // Angora internal admins. These emails skip the signup gate and can impersonate
 // any partner account via the account switcher at the top of the partner app.
@@ -833,6 +836,29 @@ function partnerQueryWithTimeout(query, ms = 8000) {
     const timer = setTimeout(() => reject(new Error('timeout')), ms);
     query.then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
   });
+}
+function partnerRecentMessagesQuery(sb, threadId, limit = PARTNER_MSG_LATEST_LIMIT) {
+  return sb.from('angora_messages')
+    .select('id, thread_id, sender_id, sender_type, content, created_at')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+}
+function partnerUpdateThreadPreview(m) {
+  if (!m || !m.thread_id) return false;
+  const t = partnerMsg.threads.find(x => x.id === m.thread_id);
+  if (!t) return false;
+  t.lastMsg = { content: m.content, sender_type: m.sender_type, created_at: m.created_at, id: m.id, thread_id: m.thread_id };
+  t.updated_at = m.created_at;
+  partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+  return true;
+}
+function schedulePartnerThreadReload() {
+  if (partnerThreadReloadTimer) return;
+  partnerThreadReloadTimer = setTimeout(async () => {
+    partnerThreadReloadTimer = null;
+    try { await partnerLoadThreads(); } catch(e) { console.warn('partner thread reload skipped', e); }
+  }, 800);
 }
 
 async function ensurePartnerSupabaseReady() {
@@ -886,25 +912,14 @@ async function partnerLoadThreads() {
   partnerMsg.accountsById = byId;
 
   const { data: threadsRaw, error: threadsErr } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
-  // Filter: only show threads that have at least one message authored by a
-  // verified Garden PSM (sender_type = 'garden'). Partners should not see
-  // empty threads or threads where only they have posted.
+  if (threadsErr) console.warn('partnerLoadThreads thread query error:', threadsErr);
   const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
-  let gardenCounts;
-  try {
-    gardenCounts = await withTimeout(Promise.all((threadsRaw || []).map(t =>
-      sb.from('angora_messages').select('id', { count: 'exact', head: true }).eq('thread_id', t.id).eq('sender_type', 'garden').then(r => r.count || 0).catch(() => 0)
-    )), 10000);
-  } catch(e) {
-    console.warn('partnerLoadThreads gardenCounts timeout, showing all threads');
-    gardenCounts = (threadsRaw || []).map(() => 1);
-  }
-  const threads = (threadsRaw || []).filter((_, i) => gardenCounts[i] > 0);
+  const threads = threadsRaw || [];
   let lastMsgs;
   try {
     lastMsgs = await withTimeout(Promise.all(threads.map(t =>
-      sb.from('angora_messages').select('content, sender_type, created_at').eq('thread_id', t.id).order('created_at', { ascending: false }).limit(1).then(r => r.data && r.data[0]).catch(() => null)
-    )), 10000);
+      partnerRecentMessagesQuery(sb, t.id, 1).then(r => r.data && r.data[0]).catch(() => null)
+    )), 8000);
   } catch(e) {
     console.warn('partnerLoadThreads lastMsgs timeout');
     lastMsgs = threads.map(() => null);
@@ -919,13 +934,7 @@ async function partnerLoadThreads() {
     if (partnerMsg.inboxChannel) { sb.removeChannel(partnerMsg.inboxChannel); }
     partnerMsg.inboxChannel = sb.channel('partner-inbox-global').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'angora_messages' }, (payload) => {
       const m = payload.new;
-      const t = partnerMsg.threads.find(x => x.id === m.thread_id);
-      if (!t) return;
-      t.lastMsg = { content: m.content, sender_type: m.sender_type, created_at: m.created_at };
-      t.updated_at = m.created_at;
-      partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
-      renderPartnerMessagesList();
-      if (partnerMsg.activeThreadId === m.thread_id) partnerConvAppend(m);
+      if (!applyPartnerIncomingMessage(m, true)) schedulePartnerThreadReload();
       // Show notification badge on Messages tab if not on messages/conv screen
       if (m.sender_type === 'garden') updateMsgBadge(true);
     }).subscribe();
@@ -954,16 +963,11 @@ function checkUnreadBadge() {
 
 function applyPartnerIncomingMessage(m, appendToOpen = true) {
   if (!m || !m.thread_id) return false;
-  const t = partnerMsg.threads.find(x => x.id === m.thread_id);
-  if (t) {
-    t.lastMsg = { content: m.content, sender_type: m.sender_type, created_at: m.created_at, id: m.id, thread_id: m.thread_id };
-    t.updated_at = m.created_at;
-    partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
-  }
+  const foundThread = partnerUpdateThreadPreview(m);
   if (appendToOpen && partnerMsg.activeThreadId === m.thread_id) partnerConvAppend(m);
   renderPartnerMessagesList();
   if (m.sender_type === 'garden') updateMsgBadge(true);
-  return true;
+  return foundThread;
 }
 
 function startPartnerInboxPolling() {
@@ -973,15 +977,8 @@ function startPartnerInboxPolling() {
   async function pollInboxLatest() {
     try {
       const threads = (partnerMsg.threads || []).slice(0, 50);
-      await Promise.all(threads.map(async (t) => {
-        const res = await partnerQueryWithTimeout(
-          sb.from('angora_messages')
-            .select('id, thread_id, sender_id, sender_type, content, created_at')
-            .eq('thread_id', t.id)
-            .order('created_at', { ascending: false })
-            .limit(1),
-          6000
-        );
+      await Promise.allSettled(threads.map(async (t) => {
+        const res = await partnerQueryWithTimeout(partnerRecentMessagesQuery(sb, t.id, 1), 6000);
         const m = res?.data?.[0];
         if (!m) return;
         const currentKey = partnerMsgKey(t.lastMsg ? { ...t.lastMsg, thread_id: t.id } : null);
@@ -990,6 +987,7 @@ function startPartnerInboxPolling() {
     } catch(e) { console.warn('partner inbox poll skipped', e); }
   }
   partnerMsg.inboxPollTimer = setInterval(pollInboxLatest, 6000);
+  setTimeout(pollInboxLatest, 800);
 }
 
 function startPartnerConvPolling(threadId) {
@@ -1000,11 +998,7 @@ function startPartnerConvPolling(threadId) {
     if (partnerMsg.activeThreadId !== threadId) return;
     try {
       const res = await partnerQueryWithTimeout(
-        sb.from('angora_messages')
-          .select('id, thread_id, sender_id, sender_type, content, created_at')
-          .eq('thread_id', threadId)
-          .order('created_at', { ascending: false })
-          .limit(25),
+        partnerRecentMessagesQuery(sb, threadId, PARTNER_MSG_LATEST_LIMIT),
         6000
       );
       const msgs = (res?.data || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
@@ -1222,14 +1216,7 @@ async function partnerOpenConv(threadId) {
   // and the composer usable instead of replacing the chat with "Slow connection".
   (async () => {
     try {
-      const result = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('history_timeout')), 60000);
-        sb.from('angora_messages')
-          .select('id, thread_id, sender_id, sender_type, content, created_at')
-          .eq('thread_id', threadId)
-          .limit(200)
-          .then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
-      });
+      const result = await partnerQueryWithTimeout(partnerRecentMessagesQuery(sb, threadId, PARTNER_MSG_HISTORY_LIMIT), 6000);
       if (result?.error) { console.warn('partnerOpenConv history query error:', result.error); return; }
       if (partnerMsg.activeThreadId === threadId) renderMsgs(result?.data || []);
     } catch(err) {
@@ -1241,7 +1228,7 @@ async function partnerOpenConv(threadId) {
   try {
     if (partnerMsg.msgChannel) { sb.removeChannel(partnerMsg.msgChannel).catch(() => {}); }
     partnerMsg.msgChannel = sb.channel(`partner-conv-${threadId}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'angora_messages', filter: `thread_id=eq.${threadId}` }, (payload) => {
-      partnerConvAppend(payload.new);
+      applyPartnerIncomingMessage(payload.new, true);
     }).subscribe();
   } catch(e) { console.warn('conv subscribe err', e); }
   startPartnerConvPolling(threadId);
@@ -1335,7 +1322,7 @@ window.sendPartnerMessage = async function() {
   if (!sb) { console.error('sendPartnerMessage: sb is null'); return; }
   // Optimistic UI: show message immediately
   const list = document.getElementById('conv-msg-list');
-  const tempMsg = { sender_type: 'partner', content, created_at: new Date().toISOString() };
+  const tempMsg = { thread_id: threadId, sender_type: 'partner', content, created_at: new Date().toISOString() };
   if (list) {
     const noMsg = list.querySelector('[style*="text-align:center"]');
     if (noMsg) list.innerHTML = '';
@@ -1343,13 +1330,15 @@ window.sendPartnerMessage = async function() {
     list.scrollTop = list.scrollHeight;
   }
   partnerMsg.pendingLocal.push({ threadId, sender_type: 'partner', content, at: Date.now() });
+  if (partnerUpdateThreadPreview(tempMsg)) renderPartnerMessagesList();
   input.value = '';
   // Actually send to DB
   try {
     const { data: userRes } = await sb.auth.getUser();
     const userId = userRes?.user?.id || null;
-    const { error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content });
+    const { data, error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content }).select('id, thread_id, sender_id, sender_type, content, created_at').single();
     if (error) { console.error('sendPartnerMessage insert error:', error); alert('Send failed: ' + error.message); }
+    else if (data) applyPartnerIncomingMessage(data, true);
     // Update thread timestamp
     await sb.from('angora_message_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
   } catch(err) {
