@@ -860,6 +860,23 @@ function schedulePartnerThreadReload() {
     try { await partnerLoadThreads(); } catch(e) { console.warn('partner thread reload skipped', e); }
   }, 800);
 }
+function partnerThreadDept(thread) {
+  return parseDeptFromSubject(thread?.subject);
+}
+function partnerThreadGroupKey(thread) {
+  return `${thread?.account_id || 'account'}::${partnerThreadDept(thread)}`;
+}
+function partnerCollapseThreadsByDepartment(threads) {
+  const byGroup = new Map();
+  (threads || [])
+    .slice()
+    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+    .forEach((thread) => {
+      const key = partnerThreadGroupKey(thread);
+      if (!byGroup.has(key)) byGroup.set(key, thread);
+    });
+  return [...byGroup.values()];
+}
 
 async function ensurePartnerSupabaseReady() {
   // Wait up to 3s for the library to load
@@ -914,7 +931,7 @@ async function partnerLoadThreads() {
   const { data: threadsRaw, error: threadsErr } = await sb.from('angora_message_threads').select('id, account_id, subject, updated_at').in('account_id', accountIds).order('updated_at', { ascending: false });
   if (threadsErr) console.warn('partnerLoadThreads thread query error:', threadsErr);
   const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
-  const threads = threadsRaw || [];
+  const threads = partnerCollapseThreadsByDepartment(threadsRaw || []);
   let lastMsgs;
   try {
     lastMsgs = await withTimeout(Promise.all(threads.map(t =>
