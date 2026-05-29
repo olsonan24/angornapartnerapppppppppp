@@ -1377,7 +1377,26 @@ window.sendPartnerMessage = async function() {
   if (!threadId) { console.error('sendPartnerMessage: no active thread'); return; }
   const sb = partnerSupabase();
   if (!sb) { console.error('sendPartnerMessage: sb is null'); return; }
-  // Optimistic UI: show message immediately
+  // Resolve auth before drawing the optimistic bubble. In demo/stale-auth state,
+  // the old flow looked like it sent locally but no DB row was created, so
+  // Garden had nothing to show.
+  let userId = null;
+  try {
+    const { data: sessionRes } = await sb.auth.getSession();
+    userId = sessionRes?.session?.user?.id || null;
+    if (!userId) {
+      const { data: userRes } = await sb.auth.getUser();
+      userId = userRes?.user?.id || null;
+    }
+  } catch(err) {
+    console.warn('sendPartnerMessage auth check failed:', err);
+  }
+  if (!userId) {
+    alert('Please sign in again before sending a Partner message.');
+    return;
+  }
+
+  // Optimistic UI: show message immediately after auth is confirmed.
   const list = document.getElementById('conv-msg-list');
   const tempMsg = { thread_id: threadId, sender_type: 'partner', content, created_at: new Date().toISOString() };
   if (list) {
@@ -1391,8 +1410,6 @@ window.sendPartnerMessage = async function() {
   input.value = '';
   // Actually send to DB
   try {
-    const { data: userRes } = await sb.auth.getUser();
-    const userId = userRes?.user?.id || null;
     const { data, error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content }).select('id, thread_id, sender_id, sender_type, content, created_at').single();
     if (error) {
       console.error('sendPartnerMessage insert error:', error);
@@ -2213,12 +2230,10 @@ async function _partnerCheckAccessAllowed(sb, emailLower) {
       .select('id').ilike('contact_email', emailLower).limit(1);
     if (acctRows && acctRows.length > 0) return true;
   } catch(e) { console.warn('access gate error (accounts)', e); }
-  try {
-    const { data: grantRows } = await sb.from('angora_partner_access')
-      .select('id').ilike('email', emailLower).limit(1);
-    if (grantRows && grantRows.length > 0) return true;
-  } catch(e) { console.warn('access gate error (partner_access)', e); }
-  return false;
+  // Do not block sign-in on angora_partner_access here: before auth we only
+  // know an email, while the live table grants access by user_id. Let Supabase
+  // auth sign the user in, then RLS/account loading decides what they can see.
+  return true;
 }
 
 function bindRealAuth() {
