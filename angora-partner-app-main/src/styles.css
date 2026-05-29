@@ -331,6 +331,7 @@ body.authenticated .login-shell{display:none}
 .conl{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--surface);box-shadow:0 0 6px var(--green)}
 .cbody{flex:1;min-width:0}
 .cname{font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.dept-tag{display:inline-block;background:rgba(59,130,246,.12);color:var(--blue,#3b82f6);font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:4px;text-transform:uppercase;letter-spacing:1px;margin-left:6px;vertical-align:middle}
 .cprev{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmeta{text-align:right;flex-shrink:0}
 .ctime{font-size:10px;color:var(--muted);margin-bottom:5px}

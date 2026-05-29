@@ -899,6 +899,14 @@ function timeShort(ts) {
 
 function initials(name) { return (name || '?').split(/\s+/).slice(0,2).map(s => s[0]).join('').toUpperCase(); }
 
+// Department helpers (mirrors Garden convention)
+const DEPT_LABELS = { general:'General', ppc:'PPC', inventory:'Inventory', account:'Account Mgmt', billing:'Billing' };
+function parseDeptFromSubject(subject) {
+  if (!subject) return 'general';
+  const m = subject.match(/^\[([a-z]+)\]/i);
+  return m ? m[1].toLowerCase() : 'general';
+}
+
 function renderPartnerMessagesList() {
   const list = document.getElementById('messages-conv-list');
   const sub = document.getElementById('messages-subtitle');
@@ -921,9 +929,11 @@ function renderPartnerMessagesList() {
     const ini = initials(t.account?.name || 'A');
     const escaped = preview.replace(/</g,'&lt;');
     const nm = (t.account?.name || 'Angora').replace(/</g,'&lt;');
+    const dept = parseDeptFromSubject(t.subject);
+    const deptTag = dept !== 'general' ? `<span class="dept-tag">${DEPT_LABELS[dept] || dept}</span>` : '';
     return `<div class="crow ${isUnread ? 'unread' : ''}" data-thread-id="${t.id}">
       <div class="cav" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">${ini}${isUnread ? '<div class="conl"></div>' : ''}</div>
-      <div class="cbody"><div class="cname">${nm}</div><div class="cprev">${escaped}</div></div>
+      <div class="cbody"><div class="cname">${nm}${deptTag}</div><div class="cprev">${escaped}</div></div>
       <div class="cmeta"><div class="ctime">${time}</div>${isUnread ? '<div class="ubadge">\u2022</div>' : ''}</div>
     </div>`;
   }).join('');
@@ -1662,6 +1672,43 @@ function renderPartnerHome() {
   if (fbaVal) {
     const fbaUnits = (partnerData.inventory || []).filter(i => i.location === 'fba').reduce((s, i) => s + (i.quantity || 0), 0);
     fbaVal.textContent = fbaUnits.toLocaleString();
+  }
+  // Render activity feed
+  renderPartnerActivityFeed();
+}
+
+async function renderPartnerActivityFeed() {
+  const container = document.getElementById('home-activity-feed');
+  if (!container) return;
+  const sb = partnerSupabase(); if (!sb) return;
+  const accountId = partnerData.accountId;
+  if (!accountId) { container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px">No account loaded.</div>'; return; }
+  try {
+    const { data: notes, error } = await sb.from('angora_notes')
+      .select('*')
+      .eq('account_id', accountId)
+      .contains('tags', ['activity'])
+      .order('created_at', { ascending: false })
+      .limit(10);
+    if (error || !notes || notes.length === 0) {
+      container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px;font-family:var(--mono)">No recent activity.</div>';
+      return;
+    }
+    const dotColors = { inventory:'var(--green)', settings:'var(--orange)', message:'var(--blue,#60a5fa)', general:'var(--purple2)' };
+    container.innerHTML = notes.map(n => {
+      const type = (n.tags || []).find(t => t !== 'activity') || 'general';
+      const color = dotColors[type] || 'var(--purple2)';
+      const ago = timeShort(n.created_at);
+      return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border2)">
+        <div style="width:8px;height:8px;border-radius:50%;background:${color};margin-top:4px;flex-shrink:0"></div>
+        <div style="flex:1;font-family:var(--mono);font-size:10px;color:var(--text);line-height:1.5">
+          ${(n.body || '').replace(/</g,'&lt;')}
+          <div style="font-size:8px;color:var(--muted);margin-top:2px">${ago}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:11px;font-family:var(--mono)">Could not load activity.</div>';
   }
 }
 
