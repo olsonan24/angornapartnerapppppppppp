@@ -982,7 +982,7 @@ function renderPartnerContacts() {
     const hasUnread = existingThread?.lastMsg?.sender_type === 'garden';
     const escaped = (name || '').replace(/</g, '&lt;');
     const previewEscaped = (preview || '').replace(/</g, '&lt;');
-    return `<div class="contact-card" data-contact="${ct.key}" onclick="window.partnerOpenContact('${ct.key}')">
+    return `<div class="contact-card" data-contact="${ct.key}">
       <div class="cc-av ${ct.icon}">${initials(name)}</div>
       <div class="cc-info">
         <div class="cc-name">${escaped}</div>
@@ -992,6 +992,12 @@ function renderPartnerContacts() {
       ${hasUnread ? '<div class="cc-badge"></div>' : ''}
     </div>`;
   }).join('') + '</div>';
+  // Bind click/tap via addEventListener (more reliable on mobile than inline onclick)
+  container.querySelectorAll('.contact-card[data-contact]').forEach(el => {
+    el.addEventListener('click', () => {
+      window.partnerOpenContact(el.getAttribute('data-contact'));
+    });
+  });
 }
 
 window.partnerOpenContact = async function(contactKey) {
@@ -1105,13 +1111,35 @@ async function partnerOpenConv(threadId) {
   if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Loading messages\u2026</div>';
   switchTab('conv');
 
-  // Load messages with timeout to prevent infinite "Loading..."
+  // Load messages with timeout + auto-retry to prevent infinite "Loading..."
   const sb = partnerSupabase();
   if (!sb) { console.error('partnerOpenConv: sb is null'); if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#e55;font-size:12px">Connection error. <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>'; return; }
+
+  async function _loadMsgs(timeout) {
+    // Wrap Supabase thenable in a real Promise for reliable Promise.race
+    const queryPromise = new Promise((resolve, reject) => {
+      sb.from('angora_messages')
+        .select('id, thread_id, sender_id, sender_type, content, created_at')
+        .eq('thread_id', threadId)
+        .order('created_at')
+        .then(resolve, reject);
+    });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout));
+    return Promise.race([queryPromise, timeoutPromise]);
+  }
+
   try {
-    const queryPromise = sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
-    const { data: msgs, error: msgErr } = await Promise.race([queryPromise, timeoutPromise]);
+    let result;
+    try {
+      result = await _loadMsgs(10000);
+    } catch(firstErr) {
+      // Auto-retry once on timeout before showing error
+      if (firstErr.message === 'timeout') {
+        if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Still loading\u2026</div>';
+        result = await _loadMsgs(15000);
+      } else { throw firstErr; }
+    }
+    const { data: msgs, error: msgErr } = result;
     if (msgErr) { console.error('partnerOpenConv query error:', msgErr); }
     if (list) {
       if (!msgs || msgs.length === 0) {
@@ -1126,9 +1154,9 @@ async function partnerOpenConv(threadId) {
     if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">' + (err.message === 'timeout' ? 'Slow connection.' : 'Error loading messages.') + ' <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>';
   }
 
-  // Subscribe realtime for this thread
+  // Subscribe realtime for this thread (don't await channel removal — fire and forget)
   try {
-    if (partnerMsg.msgChannel) { await sb.removeChannel(partnerMsg.msgChannel); }
+    if (partnerMsg.msgChannel) { sb.removeChannel(partnerMsg.msgChannel).catch(() => {}); }
     partnerMsg.msgChannel = sb.channel(`partner-conv-${threadId}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'angora_messages', filter: `thread_id=eq.${threadId}` }, (payload) => {
       partnerConvAppend(payload.new);
     }).subscribe();
