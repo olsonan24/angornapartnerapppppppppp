@@ -883,6 +883,31 @@ function partnerMessagesScreenIsVisible() {
   const active = document.querySelector('.ts.active');
   return active && (active.id === 'screen-messages' || active.id === 'screen-conv');
 }
+function partnerCurrentScreenId() {
+  return document.querySelector('.ts.active')?.id || '';
+}
+function rememberActivePartnerThread(threadId) {
+  if (!threadId) return;
+  partnerMsg.activeThreadId = threadId;
+  const conv = document.getElementById('screen-conv');
+  if (conv) conv.dataset.activeThreadId = threadId;
+  saveState({ activeThreadId: threadId });
+}
+function resolveActivePartnerThreadId() {
+  const fromMemory = partnerMsg.activeThreadId;
+  const fromDom = document.getElementById('screen-conv')?.dataset?.activeThreadId;
+  const fromState = loadState()?.activeThreadId;
+  const candidate = [fromMemory, fromDom, fromState].find(id => id && partnerMsg.threads.some(t => t.id === id));
+  if (candidate) {
+    rememberActivePartnerThread(candidate);
+    return candidate;
+  }
+  if (partnerCurrentScreenId() === 'screen-conv' && partnerMsg.threads.length > 0) {
+    rememberActivePartnerThread(partnerMsg.threads[0].id);
+    return partnerMsg.threads[0].id;
+  }
+  return null;
+}
 async function partnerRefreshThreadsFromDb() {
   if (partnerThreadRefreshInFlight) return partnerThreadRefreshInFlight;
   partnerThreadRefreshInFlight = (async () => {
@@ -1219,7 +1244,7 @@ function renderPartnerMessagesList() {
 }
 
 async function partnerOpenConv(threadId) {
-  partnerMsg.activeThreadId = threadId;
+  rememberActivePartnerThread(threadId);
   const t = partnerMsg.threads.find(x => x.id === threadId);
   const hdrName = document.getElementById('conv-hdr-name');
   const hdrAv = document.getElementById('conv-hdr-av');
@@ -1386,8 +1411,8 @@ window.sendPartnerMessage = async function() {
   if (!input) return;
   const content = (input.value || '').trim();
   if (!content) return;
-  const threadId = partnerMsg.activeThreadId;
-  if (!threadId) { console.error('sendPartnerMessage: no active thread'); return; }
+  const threadId = resolveActivePartnerThreadId();
+  if (!threadId) { console.error('sendPartnerMessage: no active thread'); alert('Please re-open this conversation and try again.'); return; }
   const sb = partnerSupabase();
   if (!sb) { console.error('sendPartnerMessage: sb is null'); return; }
   // Resolve auth before drawing the optimistic bubble. In demo/stale-auth state,
