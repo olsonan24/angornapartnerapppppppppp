@@ -782,6 +782,7 @@ function initializeApp() {
   refreshMotionTargets();
   bindMotionInteractions();
   bindAuthControls();
+  bindPartnerComposerControls();
   setPartnerName(savedPartnerName, { syncInput: true });
   renderReport(startingReportId);
   setChartRange(startingRange, { persist: false });
@@ -826,6 +827,33 @@ function isAdminEmail(email) {
 }
 
 function partnerSupabase() { return window.angoraSupabase || null; }
+
+function bindPartnerComposerControls() {
+  if (window.__partnerComposerControlsBound) return;
+  window.__partnerComposerControlsBound = true;
+
+  // Route the visible bottom-right send button through one delegated handler.
+  // The old inline onclick could miss repeat clicks in the live browser after the
+  // conversation DOM moved/updated; this capture listener catches clicks on the
+  // button and its nested SVG parts every time.
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    const btn = target?.closest ? target.closest('#screen-conv .send-btn') : null;
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+    window.sendPartnerMessage && window.sendPartnerMessage();
+  }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const input = event.target?.closest ? event.target.closest('#screen-conv #conv-input') : null;
+    if (!input) return;
+    event.preventDefault();
+    window.sendPartnerMessage && window.sendPartnerMessage();
+  }, true);
+}
 
 function partnerMsgKey(m) {
   return m?.id || `${m?.thread_id || partnerMsg.activeThreadId || 'thread'}-${m?.created_at || ''}-${m?.sender_type || ''}-${(m?.content || '').slice(0, 80)}`;
