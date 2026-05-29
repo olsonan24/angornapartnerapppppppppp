@@ -1121,7 +1121,7 @@ async function partnerOpenConv(threadId) {
       sb.from('angora_messages')
         .select('id, thread_id, sender_id, sender_type, content, created_at')
         .eq('thread_id', threadId)
-        .order('created_at')
+        .limit(200)
         .then(resolve, reject);
     });
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout));
@@ -1139,8 +1139,9 @@ async function partnerOpenConv(threadId) {
         result = await _loadMsgs(15000);
       } else { throw firstErr; }
     }
-    const { data: msgs, error: msgErr } = result;
+    const { data: rawMsgs, error: msgErr } = result;
     if (msgErr) { console.error('partnerOpenConv query error:', msgErr); }
+    const msgs = (rawMsgs || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
     if (list) {
       if (!msgs || msgs.length === 0) {
         list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
