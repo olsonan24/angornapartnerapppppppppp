@@ -1106,54 +1106,51 @@ async function partnerOpenConv(threadId) {
     if (hdrStatus) hdrStatus.textContent = `\u25cf ${contactRole}`;
     if (input) input.placeholder = `Message ${contactName}\u2026`;
   }
-  // Show loading state immediately
+  // Show the conversation immediately from inbox cache; never block opening on a slow DB read.
   const list = document.getElementById('conv-msg-list');
-  if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Loading messages\u2026</div>';
+  const cachedLast = t?.lastMsg ? { ...t.lastMsg, thread_id: threadId } : null;
+  if (list) {
+    if (cachedLast) {
+      list.innerHTML = msgsWithUniqueIds([cachedLast]).map(partnerBubbleHtml).join('');
+      list.scrollTop = list.scrollHeight;
+    } else {
+      list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
+    }
+  }
   switchTab('conv');
 
-  // Load messages with timeout + auto-retry to prevent infinite "Loading..."
   const sb = partnerSupabase();
-  if (!sb) { console.error('partnerOpenConv: sb is null'); if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#e55;font-size:12px">Connection error. <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>'; return; }
+  if (!sb) { console.error('partnerOpenConv: sb is null'); return; }
 
-  async function _loadMsgs(timeout) {
-    // Wrap Supabase thenable in a real Promise for reliable Promise.race
-    const queryPromise = new Promise((resolve, reject) => {
-      sb.from('angora_messages')
-        .select('id, thread_id, sender_id, sender_type, content, created_at')
-        .eq('thread_id', threadId)
-        .limit(200)
-        .then(resolve, reject);
-    });
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), timeout));
-    return Promise.race([queryPromise, timeoutPromise]);
+  function renderMsgs(rawMsgs) {
+    const msgs = msgsWithUniqueIds(rawMsgs || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    if (!list) return;
+    if (msgs.length === 0) {
+      list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
+    } else {
+      list.innerHTML = msgs.map(partnerBubbleHtml).join('');
+      list.scrollTop = list.scrollHeight;
+    }
   }
 
-  try {
-    let result;
+  // Load full history in the background. If the DB is slow, keep the cached preview
+  // and the composer usable instead of replacing the chat with "Slow connection".
+  (async () => {
     try {
-      result = await _loadMsgs(10000);
-    } catch(firstErr) {
-      // Auto-retry once on timeout before showing error
-      if (firstErr.message === 'timeout') {
-        if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Still loading\u2026</div>';
-        result = await _loadMsgs(15000);
-      } else { throw firstErr; }
+      const result = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('history_timeout')), 60000);
+        sb.from('angora_messages')
+          .select('id, thread_id, sender_id, sender_type, content, created_at')
+          .eq('thread_id', threadId)
+          .limit(200)
+          .then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
+      });
+      if (result?.error) { console.warn('partnerOpenConv history query error:', result.error); return; }
+      if (partnerMsg.activeThreadId === threadId) renderMsgs(result?.data || []);
+    } catch(err) {
+      console.warn('partnerOpenConv history load skipped:', err);
     }
-    const { data: rawMsgs, error: msgErr } = result;
-    if (msgErr) { console.error('partnerOpenConv query error:', msgErr); }
-    const msgs = (rawMsgs || []).slice().sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
-    if (list) {
-      if (!msgs || msgs.length === 0) {
-        list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
-      } else {
-        list.innerHTML = msgs.map(partnerBubbleHtml).join('');
-        list.scrollTop = list.scrollHeight;
-      }
-    }
-  } catch(err) {
-    console.error('partnerOpenConv error:', err);
-    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">' + (err.message === 'timeout' ? 'Slow connection.' : 'Error loading messages.') + ' <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>';
-  }
+  })();
 
   // Subscribe realtime for this thread (don't await channel removal — fire and forget)
   try {
@@ -1162,6 +1159,13 @@ async function partnerOpenConv(threadId) {
       partnerConvAppend(payload.new);
     }).subscribe();
   } catch(e) { console.warn('conv subscribe err', e); }
+}
+
+function msgsWithUniqueIds(msgs) {
+  return (msgs || []).map((m, i) => ({
+    ...m,
+    id: m.id || `${m.thread_id || 'thread'}-${m.created_at || i}-${m.sender_type || ''}-${(m.content || '').slice(0, 20)}`
+  }));
 }
 
 function partnerBubbleHtml(m) {
