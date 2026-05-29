@@ -818,6 +818,9 @@ const PARTNER_MSG_LATEST_LIMIT = 25;
 let partnerThreadReloadTimer = null;
 let partnerThreadRefreshInFlight = null;
 let partnerVisibleRefreshTimer = null;
+let partnerPreviewRefreshInFlight = false;
+let partnerInboxPollInFlight = false;
+let partnerActivePollInFlight = false;
 
 // Angora internal admins. These emails skip the signup gate and can impersonate
 // any partner account via the account switcher at the top of the partner app.
@@ -863,8 +866,25 @@ function partnerRememberMessages(msgs) {
 }
 function partnerQueryWithTimeout(query, ms = 8000) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('timeout')), ms);
-    query.then((res) => { clearTimeout(timer); resolve(res); }, (err) => { clearTimeout(timer); reject(err); });
+    let settled = false;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timedQuery = controller && query && typeof query.abortSignal === 'function'
+      ? query.abortSignal(controller.signal)
+      : query;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(value);
+    };
+    const timer = setTimeout(() => {
+      if (controller) controller.abort();
+      finish(reject, new Error('timeout'));
+    }, ms);
+    timedQuery.then(
+      (res) => finish(resolve, res),
+      (err) => finish(reject, err)
+    );
   });
 }
 function partnerRecentMessagesQuery(sb, threadId, limit = PARTNER_MSG_LATEST_LIMIT) {
@@ -951,6 +971,9 @@ async function partnerRefreshThreadsFromDb() {
 async function partnerRefreshThreadPreviewsFromDb() {
   const sb = partnerSupabase();
   if (!sb) return;
+  if (partnerPreviewRefreshInFlight) return;
+  partnerPreviewRefreshInFlight = true;
+  try {
   if (!partnerMsg.threads.length) {
     await partnerRefreshThreadsFromDb();
     return;
@@ -962,6 +985,9 @@ async function partnerRefreshThreadPreviewsFromDb() {
     const currentKey = partnerMsgKey(thread.lastMsg ? { ...thread.lastMsg, thread_id: thread.id } : null);
     if (partnerMsgKey(message) !== currentKey) applyPartnerIncomingMessage(message, false);
   }));
+  } finally {
+    partnerPreviewRefreshInFlight = false;
+  }
 }
 function startPartnerVisibleRefreshLoop() {
   if (partnerVisibleRefreshTimer) clearInterval(partnerVisibleRefreshTimer);
@@ -1085,6 +1111,8 @@ function startPartnerInboxPolling() {
   if (!sb) return;
   if (partnerMsg.inboxPollTimer) clearInterval(partnerMsg.inboxPollTimer);
   async function pollInboxLatest() {
+    if (partnerInboxPollInFlight) return;
+    partnerInboxPollInFlight = true;
     try {
       const threads = (partnerMsg.threads || []).slice(0, 50);
       await Promise.allSettled(threads.map(async (t) => {
@@ -1095,6 +1123,7 @@ function startPartnerInboxPolling() {
         if (partnerMsgKey(m) !== currentKey) applyPartnerIncomingMessage(m, false);
       }));
     } catch(e) { console.warn('partner inbox poll skipped', e); }
+    finally { partnerInboxPollInFlight = false; }
   }
   partnerMsg.inboxPollTimer = setInterval(pollInboxLatest, 2000);
   setTimeout(pollInboxLatest, 800);
@@ -1106,6 +1135,8 @@ function startPartnerConvPolling(threadId) {
   if (partnerMsg.activePollTimer) clearInterval(partnerMsg.activePollTimer);
   async function pollConversation() {
     if (partnerMsg.activeThreadId !== threadId) return;
+    if (partnerActivePollInFlight) return;
+    partnerActivePollInFlight = true;
     try {
       const res = await partnerQueryWithTimeout(
         partnerRecentMessagesQuery(sb, threadId, PARTNER_MSG_LATEST_LIMIT),
@@ -1116,6 +1147,7 @@ function startPartnerConvPolling(threadId) {
         if (!partnerMsg.seenMsgKeys.has(partnerMsgKey(m))) applyPartnerIncomingMessage(m, true);
       });
     } catch(e) { console.warn('partner conv poll skipped', e); }
+    finally { partnerActivePollInFlight = false; }
   }
   partnerMsg.activePollTimer = setInterval(pollConversation, 1000);
   setTimeout(pollConversation, 250);
@@ -1478,7 +1510,13 @@ window.sendPartnerMessage = async function() {
   input.value = '';
   // Actually send to DB
   try {
-    const { data, error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content }).select('id, thread_id, sender_id, sender_type, content, created_at').single();
+    const { data, error } = await partnerQueryWithTimeout(
+      sb.from('angora_messages')
+        .insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content })
+        .select('id, thread_id, sender_id, sender_type, content, created_at')
+        .single(),
+      10000
+    );
     if (error) {
       console.error('sendPartnerMessage insert error:', error);
       partnerMsg.pendingLocal = partnerMsg.pendingLocal.filter(p => !(p.threadId === threadId && p.sender_type === 'partner' && p.content === content));
@@ -1489,10 +1527,17 @@ window.sendPartnerMessage = async function() {
     }
     else if (data) applyPartnerIncomingMessage(data, true);
     // Update thread timestamp
-    await sb.from('angora_message_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+    await partnerQueryWithTimeout(
+      sb.from('angora_message_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId),
+      5000
+    ).catch(e => console.warn('sendPartnerMessage thread timestamp skipped:', e));
   } catch(err) {
     console.error('sendPartnerMessage error:', err);
+    partnerMsg.pendingLocal = partnerMsg.pendingLocal.filter(p => !(p.threadId === threadId && p.sender_type === 'partner' && p.content === content));
     alert('Send failed. Please try again.');
+  } finally {
+    const currentInput = document.getElementById('conv-input');
+    if (currentInput) currentInput.focus();
   }
 };
 
