@@ -118,7 +118,7 @@
 
       <div class="slbl">Quick Actions</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 22px;margin-bottom:22px">
-        <div class="qa-btn" onclick="switchTab('conv')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
+        <div class="qa-btn" onclick="switchTab('messages')" style="background:linear-gradient(135deg,#ffffff,#f8f8f9);border:1px solid rgba(10,10,10,.08);border-radius:16px;padding:14px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:10px" onmouseover="this.style.borderColor='rgba(10,10,10,.08)'" onmouseout="this.style.borderColor='rgba(10,10,10,.08)'">
           <div style="width:34px;height:34px;border-radius:10px;background:rgba(10,10,10,.08);display:flex;align-items:center;justify-content:center">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple2)" stroke-width="1.8" stroke-linecap="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </div>
@@ -401,8 +401,11 @@
     <!-- ══════ MESSAGES ══════ -->
     <div class="ts" id="screen-messages">
       <div class="mhdr"><div class="mtitle">Messages</div><div class="msub" id="messages-subtitle">Your Angora team</div></div>
-      <div class="nmb" onclick="window.partnerStartNewMessage && window.partnerStartNewMessage()" style="cursor:pointer"><div class="nmico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><div><div class="nmlbl">New Message</div><div class="nmsub">Start a conversation with your team</div></div></div>
-      <div class="slbl">Conversations</div>
+      <div class="slbl">Your Team</div>
+      <div id="messages-contacts-list">
+        <!-- 3 contact cards rendered by JS -->
+      </div>
+      <div class="slbl" style="margin-top:18px">Conversations</div>
       <div class="clist" id="messages-conv-list">
         <!-- Conversations render here. Populated by renderMessagesScreen() -->
       </div>
