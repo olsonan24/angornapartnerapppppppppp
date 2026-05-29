@@ -872,13 +872,26 @@ async function partnerLoadThreads() {
   // Filter: only show threads that have at least one message authored by a
   // verified Garden PSM (sender_type = 'garden'). Partners should not see
   // empty threads or threads where only they have posted.
-  const gardenCounts = await Promise.all((threadsRaw || []).map(t =>
-    sb.from('angora_messages').select('id', { count: 'exact', head: true }).eq('thread_id', t.id).eq('sender_type', 'garden').then(r => r.count || 0)
-  ));
+  const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+  let gardenCounts;
+  try {
+    gardenCounts = await withTimeout(Promise.all((threadsRaw || []).map(t =>
+      sb.from('angora_messages').select('id', { count: 'exact', head: true }).eq('thread_id', t.id).eq('sender_type', 'garden').then(r => r.count || 0).catch(() => 0)
+    )), 10000);
+  } catch(e) {
+    console.warn('partnerLoadThreads gardenCounts timeout, showing all threads');
+    gardenCounts = (threadsRaw || []).map(() => 1);
+  }
   const threads = (threadsRaw || []).filter((_, i) => gardenCounts[i] > 0);
-  const lastMsgs = await Promise.all(threads.map(t =>
-    sb.from('angora_messages').select('content, sender_type, created_at').eq('thread_id', t.id).order('created_at', { ascending: false }).limit(1).then(r => r.data && r.data[0])
-  ));
+  let lastMsgs;
+  try {
+    lastMsgs = await withTimeout(Promise.all(threads.map(t =>
+      sb.from('angora_messages').select('content, sender_type, created_at').eq('thread_id', t.id).order('created_at', { ascending: false }).limit(1).then(r => r.data && r.data[0]).catch(() => null)
+    )), 10000);
+  } catch(e) {
+    console.warn('partnerLoadThreads lastMsgs timeout');
+    lastMsgs = threads.map(() => null);
+  }
   partnerMsg.threads = threads.map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
   partnerMsg.ready = true;
   checkUnreadBadge();
@@ -1092,11 +1105,13 @@ async function partnerOpenConv(threadId) {
   if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Loading messages\u2026</div>';
   switchTab('conv');
 
-  // Load messages
+  // Load messages with timeout to prevent infinite "Loading..."
   const sb = partnerSupabase();
-  if (!sb) { console.error('partnerOpenConv: sb is null'); return; }
+  if (!sb) { console.error('partnerOpenConv: sb is null'); if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#e55;font-size:12px">Connection error. <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>'; return; }
   try {
-    const { data: msgs, error: msgErr } = await sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
+    const queryPromise = sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000));
+    const { data: msgs, error: msgErr } = await Promise.race([queryPromise, timeoutPromise]);
     if (msgErr) { console.error('partnerOpenConv query error:', msgErr); }
     if (list) {
       if (!msgs || msgs.length === 0) {
@@ -1108,7 +1123,7 @@ async function partnerOpenConv(threadId) {
     }
   } catch(err) {
     console.error('partnerOpenConv error:', err);
-    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#e55;font-size:12px">Error loading messages. Please try again.</div>';
+    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">' + (err.message === 'timeout' ? 'Slow connection.' : 'Error loading messages.') + ' <span style="text-decoration:underline;cursor:pointer" onclick="partnerOpenConv(\'' + threadId + '\')">Tap to retry</span></div>';
   }
 
   // Subscribe realtime for this thread
@@ -1256,6 +1271,8 @@ window.partnerSwitchAccount = async function(accountId) {
   if (!accountId || accountId === partnerData.accountId) return;
   partnerData.accountId = accountId;
   partnerData.ready = false;
+  partnerMsg.ready = false;
+  partnerMsg.threads = [];
   localStorage.setItem('angoraPartnerAcctId', accountId);
   // Reload all data for the new account
   await partnerLoadAccountData();
