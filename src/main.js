@@ -1284,13 +1284,14 @@ async function partnerLoadAccountData() {
     });
   }
   partnerData.availableAccounts = allAccounts;
-  renderPartnerAccountSwitcher();
-  if (allAccounts.length === 0) { partnerData.ready = true; return; }
+  if (allAccounts.length === 0) { partnerData.ready = true; renderPartnerAccountSwitcher(); return; }
   // Prefer a previously-selected account if still available, else first
   const saved = localStorage.getItem('angoraPartnerAcctId');
   const pick = (saved && allAccounts.find(a => a.id === saved)) ? saved : allAccounts[0].id;
   const accountId = pick;
   partnerData.accountId = accountId;
+  // Render switcher AFTER accountId is set so the dropdown shows the correct selection
+  renderPartnerAccountSwitcher();
   const { data: account } = await sb.from('angora_accounts').select('id, name, status').eq('id', accountId).single();
   partnerData.account = account;
   const { data: products } = await sb.from('angora_products').select('*').eq('account_id', accountId);
