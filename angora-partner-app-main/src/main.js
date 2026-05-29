@@ -881,6 +881,7 @@ async function partnerLoadThreads() {
   ));
   partnerMsg.threads = threads.map((t, i) => ({ ...t, lastMsg: lastMsgs[i] || null, account: byId[t.account_id] }));
   partnerMsg.ready = true;
+  checkUnreadBadge();
 
   // Global realtime for inbox list updates
   try {
@@ -894,6 +895,8 @@ async function partnerLoadThreads() {
       partnerMsg.threads.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
       renderPartnerMessagesList();
       if (partnerMsg.activeThreadId === m.thread_id) partnerConvAppend(m);
+      // Show notification badge on Messages tab if not on messages/conv screen
+      if (m.sender_type === 'garden') updateMsgBadge(true);
     }).subscribe();
   } catch(e) { console.warn('partner inbox subscribe err', e); }
 }
@@ -907,6 +910,16 @@ function timeShort(ts) {
 }
 
 function initials(name) { return (name || '?').split(/\s+/).slice(0,2).map(s => s[0]).join('').toUpperCase(); }
+
+// ═══ Notification badge ═══
+function updateMsgBadge(show) {
+  const badge = document.getElementById('msg-tab-badge');
+  if (badge) badge.style.display = show ? 'block' : 'none';
+}
+function checkUnreadBadge() {
+  const hasUnread = partnerMsg.threads.some(t => t.lastMsg?.sender_type === 'garden');
+  updateMsgBadge(hasUnread);
+}
 
 // Department helpers (mirrors Garden convention)
 const DEPT_LABELS = { general:'General', ppc:'PPC', inventory:'Inventory', account:'Account Mgmt', billing:'Billing' };
@@ -1074,16 +1087,28 @@ async function partnerOpenConv(threadId) {
     if (hdrStatus) hdrStatus.textContent = `\u25cf ${contactRole}`;
     if (input) input.placeholder = `Message ${contactName}\u2026`;
   }
+  // Show loading state immediately
+  const list = document.getElementById('conv-msg-list');
+  if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">Loading messages\u2026</div>';
   switchTab('conv');
 
   // Load messages
   const sb = partnerSupabase();
-  if (!sb) return;
-  const { data: msgs } = await sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
-  const list = document.getElementById('conv-msg-list');
-  if (list) {
-    list.innerHTML = (msgs || []).map(partnerBubbleHtml).join('');
-    list.scrollTop = list.scrollHeight;
+  if (!sb) { console.error('partnerOpenConv: sb is null'); return; }
+  try {
+    const { data: msgs, error: msgErr } = await sb.from('angora_messages').select('*').eq('thread_id', threadId).order('created_at');
+    if (msgErr) { console.error('partnerOpenConv query error:', msgErr); }
+    if (list) {
+      if (!msgs || msgs.length === 0) {
+        list.innerHTML = '<div style="padding:30px;text-align:center;color:#999;font-size:12px">No messages yet. Send a message below to start.</div>';
+      } else {
+        list.innerHTML = msgs.map(partnerBubbleHtml).join('');
+        list.scrollTop = list.scrollHeight;
+      }
+    }
+  } catch(err) {
+    console.error('partnerOpenConv error:', err);
+    if (list) list.innerHTML = '<div style="padding:30px;text-align:center;color:#e55;font-size:12px">Error loading messages. Please try again.</div>';
   }
 
   // Subscribe realtime for this thread
@@ -1159,13 +1184,32 @@ window.sendPartnerMessage = async function() {
   if (!input) return;
   const content = (input.value || '').trim();
   if (!content) return;
-  const threadId = partnerMsg.activeThreadId; if (!threadId) return;
-  const sb = partnerSupabase(); if (!sb) return;
-  const { data: userRes } = await sb.auth.getUser();
-  const userId = userRes && userRes.user ? userRes.user.id : null;
-  const { error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content });
-  if (error) return alert('Send failed: ' + error.message);
+  const threadId = partnerMsg.activeThreadId;
+  if (!threadId) { console.error('sendPartnerMessage: no active thread'); return; }
+  const sb = partnerSupabase();
+  if (!sb) { console.error('sendPartnerMessage: sb is null'); return; }
+  // Optimistic UI: show message immediately
+  const list = document.getElementById('conv-msg-list');
+  const tempMsg = { sender_type: 'partner', content, created_at: new Date().toISOString() };
+  if (list) {
+    const noMsg = list.querySelector('[style*="text-align:center"]');
+    if (noMsg) list.innerHTML = '';
+    list.insertAdjacentHTML('beforeend', partnerBubbleHtml(tempMsg));
+    list.scrollTop = list.scrollHeight;
+  }
   input.value = '';
+  // Actually send to DB
+  try {
+    const { data: userRes } = await sb.auth.getUser();
+    const userId = userRes?.user?.id || null;
+    const { error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content });
+    if (error) { console.error('sendPartnerMessage insert error:', error); alert('Send failed: ' + error.message); }
+    // Update thread timestamp
+    await sb.from('angora_message_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
+  } catch(err) {
+    console.error('sendPartnerMessage error:', err);
+    alert('Send failed. Please try again.');
+  }
 };
 
 // ─── Partner data wiring (Home / Inventory / FBA) ──────────────────────────
@@ -2073,8 +2117,9 @@ function bindRealAuth() {
 const origSwitchTab = switchTab;
 window.switchTab = function(tabOrScreen, opts) {
   const result = origSwitchTab(tabOrScreen, opts);
-  if (tabOrScreen === 'messages' && partnerMsg.ready) {
+  if ((tabOrScreen === 'messages' || tabOrScreen === 'conv') && partnerMsg.ready) {
     renderPartnerMessagesList();
+    updateMsgBadge(false);
   }
   if (tabOrScreen === 'orders' && partnerData.ready) {
     renderPartnerOrders();
