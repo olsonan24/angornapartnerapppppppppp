@@ -815,6 +815,8 @@ const partnerMsg = {
 const PARTNER_MSG_HISTORY_LIMIT = 100;
 const PARTNER_MSG_LATEST_LIMIT = 25;
 let partnerThreadReloadTimer = null;
+let partnerThreadRefreshInFlight = null;
+let partnerVisibleRefreshTimer = null;
 
 // Angora internal admins. These emails skip the signup gate and can impersonate
 // any partner account via the account switcher at the top of the partner app.
@@ -857,7 +859,7 @@ function schedulePartnerThreadReload() {
   if (partnerThreadReloadTimer) return;
   partnerThreadReloadTimer = setTimeout(async () => {
     partnerThreadReloadTimer = null;
-    try { await partnerLoadThreads(); } catch(e) { console.warn('partner thread reload skipped', e); }
+    try { await partnerRefreshThreadsFromDb(); } catch(e) { console.warn('partner thread reload skipped', e); }
   }, 800);
 }
 function partnerThreadDept(thread) {
@@ -876,6 +878,44 @@ function partnerCollapseThreadsByDepartment(threads) {
       if (!byGroup.has(key)) byGroup.set(key, thread);
     });
   return [...byGroup.values()];
+}
+function partnerMessagesScreenIsVisible() {
+  const active = document.querySelector('.ts.active');
+  return active && (active.id === 'screen-messages' || active.id === 'screen-conv');
+}
+async function partnerRefreshThreadsFromDb() {
+  if (partnerThreadRefreshInFlight) return partnerThreadRefreshInFlight;
+  partnerThreadRefreshInFlight = (async () => {
+    await partnerLoadThreads();
+    renderPartnerMessagesList();
+  })();
+  try {
+    return await partnerThreadRefreshInFlight;
+  } finally {
+    partnerThreadRefreshInFlight = null;
+  }
+}
+async function partnerRefreshThreadPreviewsFromDb() {
+  const sb = partnerSupabase();
+  if (!sb) return;
+  if (!partnerMsg.threads.length) {
+    await partnerRefreshThreadsFromDb();
+    return;
+  }
+  await Promise.allSettled(partnerMsg.threads.map(async (thread) => {
+    const res = await partnerQueryWithTimeout(partnerRecentMessagesQuery(sb, thread.id, 1), 5000);
+    const message = res?.data?.[0];
+    if (!message) return;
+    const currentKey = partnerMsgKey(thread.lastMsg ? { ...thread.lastMsg, thread_id: thread.id } : null);
+    if (partnerMsgKey(message) !== currentKey) applyPartnerIncomingMessage(message, false);
+  }));
+}
+function startPartnerVisibleRefreshLoop() {
+  if (partnerVisibleRefreshTimer) clearInterval(partnerVisibleRefreshTimer);
+  partnerVisibleRefreshTimer = setInterval(() => {
+    if (!partnerMsg.ready || document.hidden || !partnerMessagesScreenIsVisible()) return;
+    partnerRefreshThreadPreviewsFromDb().catch(e => console.warn('partner visible refresh skipped', e));
+  }, 2500);
 }
 
 async function ensurePartnerSupabaseReady() {
@@ -2265,6 +2305,17 @@ function bindRealAuth() {
       }
     });
   }
+  startPartnerVisibleRefreshLoop();
+  window.addEventListener('focus', () => {
+    if (partnerMsg.ready && partnerMessagesScreenIsVisible()) {
+      partnerRefreshThreadsFromDb().catch(e => console.warn('partner focus refresh skipped', e));
+    }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && partnerMsg.ready && partnerMessagesScreenIsVisible()) {
+      partnerRefreshThreadsFromDb().catch(e => console.warn('partner visibility refresh skipped', e));
+    }
+  });
 })();
 
 // When user switches to messages tab, refresh
@@ -2272,7 +2323,7 @@ const origSwitchTab = switchTab;
 window.switchTab = function(tabOrScreen, opts) {
   const result = origSwitchTab(tabOrScreen, opts);
   if ((tabOrScreen === 'messages' || tabOrScreen === 'conv') && partnerMsg.ready) {
-    renderPartnerMessagesList();
+    partnerRefreshThreadsFromDb().catch(e => console.warn('partner tab refresh skipped', e));
     updateMsgBadge(false);
   }
   if (tabOrScreen === 'orders' && partnerData.ready) {
