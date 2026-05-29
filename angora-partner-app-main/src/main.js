@@ -915,7 +915,7 @@ function startPartnerVisibleRefreshLoop() {
   partnerVisibleRefreshTimer = setInterval(() => {
     if (!partnerMsg.ready || document.hidden || !partnerMessagesScreenIsVisible()) return;
     partnerRefreshThreadPreviewsFromDb().catch(e => console.warn('partner visible refresh skipped', e));
-  }, 2500);
+  }, 2000);
 }
 
 async function ensurePartnerSupabaseReady() {
@@ -1043,7 +1043,7 @@ function startPartnerInboxPolling() {
       }));
     } catch(e) { console.warn('partner inbox poll skipped', e); }
   }
-  partnerMsg.inboxPollTimer = setInterval(pollInboxLatest, 6000);
+  partnerMsg.inboxPollTimer = setInterval(pollInboxLatest, 2000);
   setTimeout(pollInboxLatest, 800);
 }
 
@@ -1064,8 +1064,8 @@ function startPartnerConvPolling(threadId) {
       });
     } catch(e) { console.warn('partner conv poll skipped', e); }
   }
-  partnerMsg.activePollTimer = setInterval(pollConversation, 2500);
-  setTimeout(pollConversation, 600);
+  partnerMsg.activePollTimer = setInterval(pollConversation, 1000);
+  setTimeout(pollConversation, 250);
 }
 
 // Department helpers (mirrors Garden convention)
@@ -1394,7 +1394,14 @@ window.sendPartnerMessage = async function() {
     const { data: userRes } = await sb.auth.getUser();
     const userId = userRes?.user?.id || null;
     const { data, error } = await sb.from('angora_messages').insert({ thread_id: threadId, sender_id: userId, sender_type: 'partner', content }).select('id, thread_id, sender_id, sender_type, content, created_at').single();
-    if (error) { console.error('sendPartnerMessage insert error:', error); alert('Send failed: ' + error.message); }
+    if (error) {
+      console.error('sendPartnerMessage insert error:', error);
+      partnerMsg.pendingLocal = partnerMsg.pendingLocal.filter(p => !(p.threadId === threadId && p.sender_type === 'partner' && p.content === content));
+      await partnerRefreshThreadsFromDb().catch(() => {});
+      if (partnerMsg.activeThreadId === threadId) await partnerOpenConv(threadId);
+      alert('Send failed: ' + error.message);
+      return;
+    }
     else if (data) applyPartnerIncomingMessage(data, true);
     // Update thread timestamp
     await sb.from('angora_message_threads').update({ updated_at: new Date().toISOString() }).eq('id', threadId);
