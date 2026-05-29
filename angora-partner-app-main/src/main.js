@@ -821,6 +821,7 @@ let partnerVisibleRefreshTimer = null;
 let partnerPreviewRefreshInFlight = false;
 let partnerInboxPollInFlight = false;
 let partnerActivePollInFlight = false;
+let partnerSendInFlight = false;
 
 // Angora internal admins. These emails skip the signup gate and can impersonate
 // any partner account via the account switcher at the top of the partner app.
@@ -831,9 +832,35 @@ function isAdminEmail(email) {
 
 function partnerSupabase() { return window.angoraSupabase || null; }
 
+function partnerSubmitComposer(event) {
+  if (event) {
+    if (event.__partnerSendHandled) return;
+    event.__partnerSendHandled = true;
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    event.stopImmediatePropagation?.();
+  }
+  window.sendPartnerMessage && window.sendPartnerMessage();
+}
+window.partnerSubmitComposer = partnerSubmitComposer;
+
 function bindPartnerComposerControls() {
   if (window.__partnerComposerControlsBound) return;
   window.__partnerComposerControlsBound = true;
+
+  const sendBtn = document.getElementById('partner-send-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', partnerSubmitComposer);
+    sendBtn.addEventListener('pointerup', partnerSubmitComposer);
+  }
+
+  const composerInput = document.getElementById('conv-input');
+  if (composerInput) {
+    composerInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+      partnerSubmitComposer(event);
+    });
+  }
 
   // Route the visible bottom-right send button through one delegated handler.
   // The old inline onclick could miss repeat clicks in the live browser after the
@@ -843,18 +870,14 @@ function bindPartnerComposerControls() {
     const target = event.target;
     const btn = target?.closest ? target.closest('#screen-conv .send-btn') : null;
     if (!btn) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.stopImmediatePropagation) event.stopImmediatePropagation();
-    window.sendPartnerMessage && window.sendPartnerMessage();
+    partnerSubmitComposer(event);
   }, true);
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return;
     const input = event.target?.closest ? event.target.closest('#screen-conv #conv-input') : null;
     if (!input) return;
-    event.preventDefault();
-    window.sendPartnerMessage && window.sendPartnerMessage();
+    partnerSubmitComposer(event);
   }, true);
 }
 
@@ -1467,6 +1490,7 @@ window.partnerStartNewMessage = async function() {
 };
 
 window.sendPartnerMessage = async function() {
+  if (partnerSendInFlight) return;
   const input = document.getElementById('conv-input');
   if (!input) return;
   const content = (input.value || '').trim();
@@ -1475,6 +1499,7 @@ window.sendPartnerMessage = async function() {
   if (!threadId) { console.error('sendPartnerMessage: no active thread'); alert('Please re-open this conversation and try again.'); return; }
   const sb = partnerSupabase();
   if (!sb) { console.error('sendPartnerMessage: sb is null'); return; }
+  partnerSendInFlight = true;
   // Resolve auth before drawing the optimistic bubble. In demo/stale-auth state,
   // the old flow looked like it sent locally but no DB row was created, so
   // Garden had nothing to show.
@@ -1490,6 +1515,7 @@ window.sendPartnerMessage = async function() {
     console.warn('sendPartnerMessage auth check failed:', err);
   }
   if (!userId) {
+    partnerSendInFlight = false;
     saveState({ authenticated: false });
     setAuthenticatedView(false);
     alert('Please sign in again before sending a Partner message.');
@@ -1536,6 +1562,7 @@ window.sendPartnerMessage = async function() {
     partnerMsg.pendingLocal = partnerMsg.pendingLocal.filter(p => !(p.threadId === threadId && p.sender_type === 'partner' && p.content === content));
     alert('Send failed. Please try again.');
   } finally {
+    partnerSendInFlight = false;
     const currentInput = document.getElementById('conv-input');
     if (currentInput) currentInput.focus();
   }
